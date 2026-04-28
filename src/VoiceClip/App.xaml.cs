@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Interop;
@@ -32,6 +33,26 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Global unhandled exception handlers
+        AppDomain.CurrentDomain.UnhandledException += (s, args) =>
+        {
+            var ex = args.ExceptionObject as Exception;
+            LogError("UnhandledException", ex ?? new Exception("Unknown"));
+            MessageBox.Show($"Fatal error: {ex?.Message ?? "Unknown"}", "VoiceClip",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        };
+        DispatcherUnhandledException += (s, args) =>
+        {
+            LogError("DispatcherUnhandledException", args.Exception);
+            MessageBox.Show($"UI error: {args.Exception.Message}", "VoiceClip",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+            args.Handled = true;
+        };
+        TaskScheduler.UnobservedTaskException += (s, args) =>
+        {
+            LogError("UnobservedTaskException", args.Exception);
+        };
+
         base.OnStartup(e);
 
         // Single instance enforcement
@@ -98,12 +119,26 @@ public partial class App : Application
     {
         if (_speechService == null) return;
 
-        var available = await _speechService.IsAvailableAsync();
-        if (!available)
+        try
         {
-            _trayIconManager?.SetState(Tray.TrayState.Error, "Speech recognition not available");
-            _toastNotification?.ShowError(
-                "Speech recognition is not available. Enable it in Windows Settings.");
+            var available = await _speechService.IsAvailableAsync();
+            if (!available)
+            {
+                _trayIconManager?.SetState(Tray.TrayState.Error, "Speech recognition not available");
+                var result = MessageBox.Show(
+                    "Speech recognition is not available.\n\nOpen Windows speech settings?",
+                    "VoiceClip", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (result == MessageBoxResult.Yes)
+                {
+                    Process.Start(new ProcessStartInfo("ms-settings:privacy-speech") { UseShellExecute = true });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            LogError("CheckSpeechAvailabilityAsync", ex);
+            _trayIconManager?.SetState(Tray.TrayState.Error, ex.Message);
+            _toastNotification?.ShowError($"Speech check failed: {ex.Message}");
         }
     }
 
@@ -156,8 +191,9 @@ public partial class App : Application
             }
             catch (Exception ex)
             {
+                LogError("ToggleDictationAsync failed", ex);
                 _trayIconManager?.SetState(Tray.TrayState.Error, ex.Message);
-                _toastNotification?.ShowError("Failed to start speech recognition.");
+                _toastNotification?.ShowError($"Failed to start speech: {ex.Message}");
             }
         }
     }
@@ -222,5 +258,18 @@ public partial class App : Application
         }
 
         base.OnExit(e);
+    }
+
+    private static void LogError(string context, Exception ex)
+    {
+        try
+        {
+            var logPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "VoiceClip", "error.log");
+            var message = $"[{DateTime.UtcNow:O}] {context}: {ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}\n\n";
+            File.AppendAllText(logPath, message);
+        }
+        catch { }
     }
 }

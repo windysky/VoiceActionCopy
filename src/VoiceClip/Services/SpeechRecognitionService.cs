@@ -106,15 +106,27 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
     {
         if (_recognizer != null) return;
 
-        var language = new Windows.Globalization.Language(_language);
-        _recognizer = new SpeechRecognizer(language);
+        try
+        {
+            var language = new Windows.Globalization.Language(_language);
+            _recognizer = new SpeechRecognizer(language);
 
-        _recognizer.ContinuousRecognitionSession.ResultGenerated += OnResultGenerated;
-        _recognizer.ContinuousRecognitionSession.Completed += OnSessionCompleted;
+            _recognizer.ContinuousRecognitionSession.ResultGenerated += OnResultGenerated;
+            _recognizer.ContinuousRecognitionSession.Completed += OnSessionCompleted;
 
-        _recognizer.Timeouts.EndSilenceTimeout = TimeSpan.FromSeconds(_silenceTimeoutSeconds);
+            _recognizer.Timeouts.EndSilenceTimeout = TimeSpan.FromSeconds(_silenceTimeoutSeconds);
 
-        await _recognizer.CompileConstraintsAsync();
+            _recognizer.Constraints.Add(
+                new SpeechRecognitionTopicConstraint(SpeechRecognitionScenario.Dictation, "dictation"));
+
+            await _recognizer.CompileConstraintsAsync();
+        }
+        catch
+        {
+            _recognizer?.Dispose();
+            _recognizer = null;
+            throw;
+        }
     }
 
     private async Task StartContinuousRecognitionAsync()
