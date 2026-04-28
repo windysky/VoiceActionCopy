@@ -1,7 +1,7 @@
 # PROJECT_HANDOFF.md — VoiceClip
 
-**Last Updated**: 2026-04-28
-**Status**: Implemented, functional, installer-ready
+**Last Updated**: 2026-04-28 (Session 2)
+**Status**: Implemented, all known issues resolved
 
 ---
 
@@ -32,47 +32,34 @@ dotnet test tests/VoiceClip.Tests
 - **Tests**: 53/53 passing
 - **Published exe**: 53MB (self-contained + trimmed)
 - **Installer**: `installer/VoiceClip.iss` (Inno Setup)
-- **Branch**: main (6 commits ahead of origin)
 
-## Code Review Session (2026-04-28)
+## Code Review Sessions
 
-### Issues Found
+### Session 1 (2026-04-28)
 
-| # | Severity | File | Issue | Status |
-|---|----------|------|-------|--------|
-| 1 | 🟠 High | SpeechRecognitionService.cs | Dispose() called .AsTask() directly on WinRT type — crashes at runtime. WinRTAsyncHelper needed. | ✅ Fixed |
-| 2 | 🟡 Medium | DictationEntry.cs | Preview truncation has no ellipsis | Open (cosmetic) |
-| 3 | 🟡 Medium | SettingsWindow.xaml.cs | SetStartup failure not reported to user | Open (edge case) |
-| 4 | 🟢 Low | HistoryPopup.xaml | ListBox InputBindings binding context | Not a bug (verified) |
-| 5 | 🟢 Low | SpeechRecognitionService.cs | OnSessionCompleted race with StopDictationAsync | Not a bug (idempotent) |
+| # | Severity | Issue | Status |
+|---|----------|-------|--------|
+| 1 | 🟠 High | Dispose() called .AsTask() directly on WinRT — crash at runtime | ✅ Fixed (a1e2b0f) |
+| 2 | 🟡 Medium | Preview truncation no ellipsis | ✅ Fixed (7b06403) |
+| 3 | 🟡 Medium | Startup failure not reported | ✅ Fixed (7b06403) |
 
-### Resolved
+### Session 2 (2026-04-28)
 
-- `a1e2b0f` — Fix Dispose() WinRT AsTask() crash (Issue #1)
+| # | Severity | Issue | Status |
+|---|----------|-------|--------|
+| 1 | 🔴 Critical | Auto-stop (silence timeout) loses dictation text — OnSessionCompleted didn't save or notify App | ✅ Fixed (7b06403) |
+| 2 | 🟠 High | "Clear All" has no confirmation dialog (SPEC REQ-VC-004) | ✅ Fixed (7b06403) |
+| 3 | 🟡 Medium | Preview truncation no ellipsis | ✅ Fixed (7b06403) |
+| 4 | 🟡 Medium | Startup registration failure not shown to user | ✅ Fixed (7b06403) |
 
-### Open (Low Priority)
+### All Issues Resolved
 
-- Preview text truncation could show "..." suffix
-- Settings Save could report startup registration failure
+No known remaining issues. All SPEC requirements implemented.
 
 ## Key Architecture Decisions
 
-1. **WinRTAsyncHelper** — Reflection-based AsTask() wrapper required due to Windows SDK / CsWinRt type conflicts in WPF. Used in SpeechRecognitionService everywhere WinRT async → Task conversion happens.
-2. **Trimming** — Full trim mode with `_SuppressWpfTrimError=true`. VoiceClip is a TrimmerRootAssembly to preserve reflection targets.
-3. **Single-instance** — Named mutex with GUID.
-4. **Storage** — JSON files in `%APPDATA%\VoiceClip\` (history.json, settings.json, error.log).
-
-## Files Modified in This Session
-
-```
-src/VoiceClip/App.xaml.cs              — Error handlers, ms-settings link, SpeechRecognitionTopicConstraint
-src/VoiceClip/Services/SpeechRecognitionService.cs — Try/catch, topic constraint, WinRTAsyncHelper in Dispose
-src/VoiceClip/VoiceClip.csproj         — Trimming config, Content items for icons
-src/VoiceClip/Properties/PublishProfiles/single-file.pubxml — TrimMode=full
-src/VoiceClip/Assets/*.ico             — Generated tray icons
-tools/*                                — Icon generator
-installer/VoiceClip.iss                — Inno Setup installer script
-.gitignore                             — publish/, dist/
-README.md                              — Updated docs
-docs/SPEC-VOICECLIP-001.md             — Status → Implemented
-```
+1. **WinRTAsyncHelper** — Reflection-based AsTask() wrapper for explicit `.AsTask()` calls. `await` keyword works fine (uses GetAwaiter, not AsTask).
+2. **Trimming** — Full trim mode with `_SuppressWpfTrimError=true`. VoiceClip is a TrimmerRootAssembly.
+3. **DictationCompleted event** — Raised from both `StopDictationAsync` (manual stop) and `OnSessionCompleted` (auto-stop). App's `OnDictationCompleted` handler is the single point for saving to history, clipboard, and UI updates.
+4. **Single-instance** — Named mutex with GUID.
+5. **Storage** — JSON files in `%APPDATA%\VoiceClip\` (history.json, settings.json, error.log).
