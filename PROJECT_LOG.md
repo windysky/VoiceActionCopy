@@ -1,5 +1,24 @@
 # PROJECT_LOG.md — VoiceClip Session History
 
+## Session 6: 2026-04-28 13:40 CDT — Code Review Pass 5
+
+- Coding CLI used: Claude Code CLI
+- Phase(s) worked on: Full codebase re-review, XAML binding analysis, shutdown lifecycle tracing
+- Concrete changes implemented:
+  - Added `_disposed` guard to TrayIconManager.SetState — prevents ObjectDisposedException during app shutdown with active recording
+  - Added SecurityException catch to clipboard error handling — prevents generic "UI error" dialog in restricted environments
+- Files/modules touched:
+  - `src/VoiceClip/Tray/TrayIconManager.cs` — _disposed check in SetState
+  - `src/VoiceClip/App.xaml.cs` — SecurityException catch for clipboard operations
+- Items completed in this session:
+  - 2 issues fixed (2 Medium)
+  - No Critical or High issues found
+  - Full XAML binding analysis confirmed correct (ComboBox+SelectedItem pattern works via ContentControl content model)
+  - Shutdown lifecycle traced end-to-end: DictationCompleted event timing during app exit verified
+- Verification performed: `dotnet build` (0/0), `dotnet test` (53/53)
+
+---
+
 ## Session 5: 2026-04-28 13:35 CDT — Code Review Pass 4
 
 - Coding CLI used: Claude Code CLI

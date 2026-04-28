@@ -56,7 +56,7 @@ public class TrayIconManager : IDisposable
     /// </summary>
     public void SetState(TrayState state, string? message = null)
     {
-        if (_notifyIcon == null) return;
+        if (_disposed || _notifyIcon == null) return;
 
         // Try to load state-specific icon
         var icon = LoadIconForState(state);

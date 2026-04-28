@@ -215,6 +215,10 @@ public partial class App : Application
                 {
                     _toastNotification?.ShowError("Could not copy to clipboard — clipboard is busy");
                 }
+                catch (System.Security.SecurityException)
+                {
+                    _toastNotification?.ShowError("Could not copy to clipboard — access denied");
+                }
             }
         });
     }

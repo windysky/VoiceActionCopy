@@ -4,7 +4,7 @@
 
 VoiceClip is a Windows 11 system tray app that captures voice dictation into a persistent clipboard buffer using `Windows.Media.SpeechRecognition` (same engine as Voice Access). Independent of Voice Access — both can coexist.
 
-- Last updated: 2026-04-28 13:35 CDT
+- Last updated: 2026-04-28 13:40 CDT
 - Last coding CLI used: Claude Code CLI
 
 ## 2. Current State
@@ -19,6 +19,7 @@ VoiceClip is a Windows 11 system tray app that captures voice dictation into a p
 | Code review (2 passes, 6 bugs fixed) | Completed | Completed in Session 2026-04-28 13:17 CDT |
 | Code review pass 3 (6 additional fixes) | Completed | Completed in Session 2026-04-28 13:30 CDT |
 | Code review pass 4 (3 additional fixes) | Completed | Completed in Session 2026-04-28 13:35 CDT |
+| Code review pass 5 (2 additional fixes) | Completed | Completed in Session 2026-04-28 13:40 CDT |
 | Runtime end-to-end test with microphone | Not started | Needs manual testing on target machine |
 
 - **Build**: 0 errors, 0 warnings
@@ -42,10 +43,11 @@ VoiceClip is a Windows 11 system tray app that captures voice dictation into a p
 | Code review pass 2 (auto-stop, clear-all, preview, startup) | Completed | 2026-04-28 13:17 CDT |
 | Code review pass 3 (mutex crash, deadlock, validation, atomic writes, race, dead code) | Completed | 2026-04-28 13:30 CDT |
 | Code review pass 4 (event leak, clipboard error handling, dead field) | Completed | 2026-04-28 13:35 CDT |
+| Code review pass 5 (tray disposal guard, clipboard security exception) | Completed | 2026-04-28 13:40 CDT |
 
 ## 4. Outstanding Work
 
-None. All identified issues resolved across four code review passes (total: 15 bugs fixed).
+None. All identified issues resolved across five code review passes (total: 17 bugs fixed).
 
 ## 5. Risks, Open Questions, and Assumptions
 
@@ -55,7 +57,14 @@ None. All identified issues resolved across four code review passes (total: 15 b
 | Inno Setup not on PATH by default | Mitigated | 2026-04-28 | User installed Inno Setup 6 GUI. CLI needs fresh terminal for PATH. |
 | Language setting requires app restart | Known limitation | 2026-04-28 | SpeechRecognitionService is initialized once. Not a bug — documented behavior. |
 
-## 6. Code Review Pass 4 — Issues Found & Fixed
+## 6. Code Review Pass 5 — Issues Found & Fixed
+
+| SPEC | Severity | Issue | Fix |
+|------|----------|-------|-----|
+| CR5-001 | 🟡 Medium | `TrayIconManager.SetState` doesn't guard against post-disposal — ObjectDisposedException during shutdown with active recording | Add `_disposed` check in SetState |
+| CR5-002 | 🟡 Medium | Clipboard error handling too narrow — only catches COMException, SecurityException shows generic "UI error" dialog | Add SecurityException catch block |
+
+## 7. Code Review Pass 4 — Issues Found & Fixed
 
 | SPEC | Severity | Issue | Fix |
 |------|----------|-------|-----|
@@ -63,7 +72,7 @@ None. All identified issues resolved across four code review passes (total: 15 b
 | CR4-002 | 🟡 Medium | Silent clipboard failure: `COMException` when clipboard is locked shows "Copied" toast | Catch COMException, show error toast |
 | CR4-003 | 🟢 Low | Dead field `_recordingStartTime` in App.xaml.cs | Removed unused field and assignment |
 
-## 7. Code Review Pass 3 — Issues Found & Fixed
+## 8. Code Review Pass 3 — Issues Found & Fixed
 
 | SPEC | Severity | Issue | Fix |
 |------|----------|-------|-----|
@@ -75,18 +84,18 @@ None. All identified issues resolved across four code review passes (total: 15 b
 | CR-006 | 🟢 Low | Dead code: `DictationEntryItem.xaml` never referenced | Deleted file and empty Controls directory |
 | L3 fix | 🟢 Low | `HistoryService.Search` reentrant lock | Inline the query to avoid calling GetAll inside lock |
 
-## 8. Verification Status
+## 9. Verification Status
 
 | Item | Method | Result | Date/Time |
 |------|--------|--------|-----------|
-| Build | `dotnet build` | 0 errors, 0 warnings | 2026-04-28 13:35 CDT |
-| Unit tests | `dotnet test` | 53/53 pass | 2026-04-28 13:35 CDT |
+| Build | `dotnet build` | 0 errors, 0 warnings | 2026-04-28 13:40 CDT |
+| Unit tests | `dotnet test` | 53/53 pass | 2026-04-28 13:40 CDT |
 | Icons in build output | `ls bin/.../Assets/` | 3 ico files present | 2026-04-28 |
 | Trimmed publish size | `ls -lh publish/VoiceClip.exe` | 53MB | 2026-04-28 |
 | Runtime end-to-end dictation | Manual test | Not yet verified | — |
 | Inno Setup installer build | Manual test (GUI) | User reported path/type errors, all fixed | 2026-04-28 |
 
-## 9. Restart Instructions
+## 10. Restart Instructions
 
 The project is feature-complete with all known bugs fixed. Next session should:
 
@@ -94,4 +103,4 @@ The project is feature-complete with all known bugs fixed. Next session should:
 2. **Build installer**: Run `iscc installer\VoiceClip.iss` (ensure fresh terminal after Inno Setup install)
 3. **Push to origin**: `git push`
 
-Last updated: 2026-04-28 13:35 CDT
+Last updated: 2026-04-28 13:40 CDT
