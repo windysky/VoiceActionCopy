@@ -9,6 +9,12 @@
     <RootNamespace>VoiceClip</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WindowsSdkPackageVersion>10.0.22621.38</WindowsSdkPackageVersion>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>full</TrimMode>
+    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
+    <NoWarn>$(NoWarn);NETSDK1168</NoWarn>
+    <TrimmerRemoveSymbols>true</TrimmerRemoveSymbols>
+    <_SuppressWpfTrimError>true</_SuppressWpfTrimError>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +26,10 @@
     <Content Include="Assets\*.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <TrimmerRootAssembly Include="VoiceClip" />
   </ItemGroup>
 
 </Project>
