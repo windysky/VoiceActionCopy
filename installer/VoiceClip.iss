@@ -20,9 +20,9 @@ DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\{#AppExeName}
-OutputDir=dist
+OutputDir=..\dist
 OutputBaseFilename=VoiceClip-{#AppVersion}-setup
-SetupIconFile=src\VoiceClip\Assets\mic-idle.ico
+SetupIconFile=..\src\VoiceClip\Assets\mic-idle.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
@@ -37,8 +37,8 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription
 Name: "startup"; Description: "Run on Windows &startup"; GroupDescription: "Startup:"; Flags: unchecked
 
 [Files]
-Source: "publish\VoiceClip.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "publish\Assets\*"; DestDir: "{app}\Assets"; Flags: ignoreversion recursesubdirs
+Source: "..\publish\VoiceClip.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\publish\Assets\*"; DestDir: "{app}\Assets"; Flags: ignoreversion recursesubdirs
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"
@@ -53,4 +53,4 @@ Filename: "{app}\{#AppExeName}"; Description: "Launch {#AppName}"; Flags: nowait
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#AppName}"; ValueData: """{app}\{#AppExeName}"""; Flags: uninsdeletevalue; Tasks: startup
 
 [UninstallDelete]
-Type: filesandirs; Name: "{localappdata}\{#AppName}"
+Type: filesandordirs; Name: "{userappdata}\{#AppName}"
