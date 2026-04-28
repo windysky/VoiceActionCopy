@@ -4,103 +4,85 @@
 
 VoiceClip is a Windows 11 system tray app that captures voice dictation into a persistent clipboard buffer using `Windows.Media.SpeechRecognition` (same engine as Voice Access). Independent of Voice Access — both can coexist.
 
-- Last updated: 2026-04-28 13:40 CDT
+- Last updated: 2026-04-28
 - Last coding CLI used: Claude Code CLI
 
 ## 2. Current State
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Core app (tray, hotkeys, speech, history) | Completed | Completed in Session 2026-04-28 |
-| Spec compliance (all REQ-VC-001 through REQ-VC-010) | Completed | Completed in Session 2026-04-28 |
-| Icon generation tool + generated icons | Completed | Completed in Session 2026-04-28 |
-| Self-contained trimmed publish (53MB) | Completed | Completed in Session 2026-04-28 |
-| Inno Setup installer script | Completed | Completed in Session 2026-04-28 |
-| Code review (2 passes, 6 bugs fixed) | Completed | Completed in Session 2026-04-28 13:17 CDT |
-| Code review pass 3 (6 additional fixes) | Completed | Completed in Session 2026-04-28 13:30 CDT |
-| Code review pass 4 (3 additional fixes) | Completed | Completed in Session 2026-04-28 13:35 CDT |
-| Code review pass 5 (2 additional fixes) | Completed | Completed in Session 2026-04-28 13:40 CDT |
-| Runtime end-to-end test with microphone | Not started | Needs manual testing on target machine |
+| Core app (tray, hotkeys, speech, history) | Completed | Working on both dev and target machines |
+| Spec compliance (all REQ-VC-001 through REQ-VC-010) | Completed | |
+| Icon generation tool + generated icons | Completed | |
+| Self-contained publish (187MB, no trimming) | Completed | Trimming disabled — trimmed exe crashes at runtime |
+| Inno Setup installer script | Completed | Speech privacy check, all files included |
+| Runtime dictation verified on target machine | Completed | Requires speech privacy acceptance + microphone access |
+| Code review (5 passes, 17 bugs fixed) | Completed | |
+| UX improvements (click-to-copy, settings clone, restart notice) | Completed | |
 
 - **Build**: 0 errors, 0 warnings
-- **Tests**: 53/53 passing
+- **Tests**: 57/57 passing
 - **SPEC**: SPEC-VOICECLIP-001 — Status: Implemented
-- **Published exe**: 53MB (self-contained + full trimming)
+- **Published exe**: 187MB (self-contained, no trimming)
 - **Branch**: main
 
 ## 3. Execution Plan Status
 
-| Phase | Status | Last Updated |
-|-------|--------|-------------|
-| SPEC-VOICECLIP-001 Phase 1: Core Infrastructure | Completed | 2026-04-28 |
-| SPEC-VOICECLIP-001 Phase 2: Speech Recognition | Completed | 2026-04-28 |
-| SPEC-VOICECLIP-001 Phase 3: History & Clipboard | Completed | 2026-04-28 |
-| SPEC-VOICECLIP-001 Phase 4: Polish & Settings | Completed | 2026-04-28 |
-| SPEC-VOICECLIP-001 Phase 5: Testing & Packaging | Completed | 2026-04-28 |
-| Icon generation + deployment fix | Completed | 2026-04-28 13:17 CDT |
-| Trimming + installer setup | Completed | 2026-04-28 13:17 CDT |
-| Code review pass 1 (WinRT Dispose fix) | Completed | 2026-04-28 13:17 CDT |
-| Code review pass 2 (auto-stop, clear-all, preview, startup) | Completed | 2026-04-28 13:17 CDT |
-| Code review pass 3 (mutex crash, deadlock, validation, atomic writes, race, dead code) | Completed | 2026-04-28 13:30 CDT |
-| Code review pass 4 (event leak, clipboard error handling, dead field) | Completed | 2026-04-28 13:35 CDT |
-| Code review pass 5 (tray disposal guard, clipboard security exception) | Completed | 2026-04-28 13:40 CDT |
+| Phase | Status |
+|-------|--------|
+| SPEC-VOICECLIP-001 Phase 1: Core Infrastructure | Completed |
+| SPEC-VOICECLIP-001 Phase 2: Speech Recognition | Completed |
+| SPEC-VOICECLIP-001 Phase 3: History & Clipboard | Completed |
+| SPEC-VOICECLIP-001 Phase 4: Polish & Settings | Completed |
+| SPEC-VOICECLIP-001 Phase 5: Testing & Packaging | Completed |
+| Icon generation + deployment | Completed |
+| Trimming disabled (runtime crash fix) | Completed |
+| Code review passes 1-5 (17 bugs fixed) | Completed |
+| Installer speech privacy guidance | Completed |
+| UX improvements (text segmentation, click-to-copy, settings clone) | Completed |
+| Runtime dictation verified | Completed |
 
 ## 4. Outstanding Work
 
-None. All identified issues resolved across five code review passes (total: 17 bugs fixed).
+None. All core functionality working.
 
-## 5. Risks, Open Questions, and Assumptions
+## 5. Risks and Known Limitations
 
-| Item | Status | Date Opened | Notes |
-|------|--------|-------------|-------|
-| WPF trimming with `_SuppressWpfTrimError` is unsupported by Microsoft | Mitigated | 2026-04-28 | VoiceClip is TrimmerRootAssembly; 53MB trimmed exe builds and tests pass. Runtime test needed. |
-| Inno Setup not on PATH by default | Mitigated | 2026-04-28 | User installed Inno Setup 6 GUI. CLI needs fresh terminal for PATH. |
-| Language setting requires app restart | Known limitation | 2026-04-28 | SpeechRecognitionService is initialized once. Not a bug — documented behavior. |
+| Item | Status | Notes |
+|------|--------|-------|
+| WPF trimming disabled (187MB exe) | Accepted | Trimmed exe crashes at runtime; untrimmed is reliable |
+| Language/silence timeout changes require restart | By design | Settings shows restart notification |
+| Speech requires Windows Online Speech Recognition enabled | By design | Installer guides user to settings page |
+| Debug logging enabled in SpeechRecognitionService | Cleanup needed | `debug.log` written to `%APPDATA%\VoiceClip\` on each session |
 
-## 6. Code Review Pass 5 — Issues Found & Fixed
+## 6. Verification Status
 
-| SPEC | Severity | Issue | Fix |
-|------|----------|-------|-----|
-| CR5-001 | 🟡 Medium | `TrayIconManager.SetState` doesn't guard against post-disposal — ObjectDisposedException during shutdown with active recording | Add `_disposed` check in SetState |
-| CR5-002 | 🟡 Medium | Clipboard error handling too narrow — only catches COMException, SecurityException shows generic "UI error" dialog | Add SecurityException catch block |
+| Item | Result |
+|------|--------|
+| Build | 0 errors, 0 warnings |
+| Unit tests | 57/57 pass |
+| Runtime dictation | Verified on dev + target machines |
+| Tray icon + hotkeys | Working |
+| History popup (click-to-copy, delete, search, clear) | Working |
+| Settings (clone/edit, restart notice) | Working |
+| Installer (speech privacy check, all files) | Working |
+| Uninstaller (cleans %APPDATA%\VoiceClip) | Working |
 
-## 7. Code Review Pass 4 — Issues Found & Fixed
+## 7. Restart Instructions
 
-| SPEC | Severity | Issue | Fix |
-|------|----------|-------|-----|
-| CR4-001 | 🟡 Medium | Memory leak: HistoryPopup subscribes to `EntryCopied` but never unsubscribes | Unsubscribe in `Closed` event handler |
-| CR4-002 | 🟡 Medium | Silent clipboard failure: `COMException` when clipboard is locked shows "Copied" toast | Catch COMException, show error toast |
-| CR4-003 | 🟢 Low | Dead field `_recordingStartTime` in App.xaml.cs | Removed unused field and assignment |
+The project is feature-complete. For the next session:
 
-## 8. Code Review Pass 3 — Issues Found & Fixed
+1. Remove debug logging from `SpeechRecognitionService.cs` (the `LogDebug` calls)
+2. Remove `%APPDATA%\VoiceClip\debug.log` from target machines
+3. Rebuild installer if any changes are made
+4. `git push` to sync to origin
 
-| SPEC | Severity | Issue | Fix |
-|------|----------|-------|-----|
-| CR-001 | 🔴 Critical | `ReleaseMutex()` crash on second-instance attempt in `App.OnExit` | Track `_ownsMutex` field; only release if acquired |
-| CR-002 | 🟠 High | Deadlock on exit during active recording — `.Wait()` blocks UI thread on WinRT STA | Add 2-second timeout to `.Wait()` in Dispose |
-| CR-003 | 🟡 Medium | No validation on loaded settings — corrupt JSON values accepted | Add `Math.Clamp` and null-coalesce in setters |
-| CR-004 | 🟡 Medium | Non-atomic history file writes — `File.WriteAllText` can corrupt on crash | Write to `.tmp` then `File.Replace` or `File.Move` |
-| CR-005 | 🟡 Medium | Race condition in DictationCompleted — `_isRecording` not volatile | Mark `_isRecording` as `volatile` |
-| CR-006 | 🟢 Low | Dead code: `DictationEntryItem.xaml` never referenced | Deleted file and empty Controls directory |
-| L3 fix | 🟢 Low | `HistoryService.Search` reentrant lock | Inline the query to avoid calling GetAll inside lock |
+## 8. Tech Stack
 
-## 9. Verification Status
-
-| Item | Method | Result | Date/Time |
-|------|--------|--------|-----------|
-| Build | `dotnet build` | 0 errors, 0 warnings | 2026-04-28 13:40 CDT |
-| Unit tests | `dotnet test` | 53/53 pass | 2026-04-28 13:40 CDT |
-| Icons in build output | `ls bin/.../Assets/` | 3 ico files present | 2026-04-28 |
-| Trimmed publish size | `ls -lh publish/VoiceClip.exe` | 53MB | 2026-04-28 |
-| Runtime end-to-end dictation | Manual test | Not yet verified | — |
-| Inno Setup installer build | Manual test (GUI) | User reported path/type errors, all fixed | 2026-04-28 |
-
-## 10. Restart Instructions
-
-The project is feature-complete with all known bugs fixed. Next session should:
-
-1. **Runtime test**: Launch `publish\VoiceClip.exe`, test dictation with microphone, verify tray icons, hotkeys, history popup, auto-stop saves text
-2. **Build installer**: Run `iscc installer\VoiceClip.iss` (ensure fresh terminal after Inno Setup install)
-3. **Push to origin**: `git push`
-
-Last updated: 2026-04-28 13:40 CDT
+- .NET 8 (net8.0-windows10.0.22621.0)
+- WPF (WinExe, hidden MainWindow for HWND/message pump)
+- Windows.Media.SpeechRecognition (WinRT, continuous dictation)
+- Hardcodet.NotifyIcon.Wpf (system tray)
+- System.Drawing.Common (icon loading)
+- Inno Setup 6 (installer)
+- xUnit + FluentAssertions + Moq (tests)
