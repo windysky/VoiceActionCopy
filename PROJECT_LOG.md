@@ -1,5 +1,36 @@
 # PROJECT_LOG.md — VoiceClip Session History
 
+## Session 4: 2026-04-28 13:30 CDT — Code Review Pass 3
+
+- Coding CLI used: Claude Code CLI
+- Phase(s) worked on: Deep code review (full source read), bug identification, fix implementation
+- Concrete changes implemented:
+  - Fixed ReleaseMutex crash on second-instance launch (Critical)
+  - Fixed potential deadlock on exit during active recording (High)
+  - Added settings validation with Math.Clamp on SilenceTimeoutSeconds and MaxHistoryEntries
+  - Added null/whitespace guard on Language setter
+  - Changed history file writes to atomic (temp file + Replace/Move)
+  - Marked _isRecording as volatile to prevent race condition in DictationCompleted
+  - Removed dead code: DictationEntryItem.xaml and empty Controls directory
+  - Fixed HistoryService.Search reentrant lock by inlining the empty-query path
+- Files/modules touched:
+  - `src/VoiceClip/App.xaml.cs` — Added _ownsMutex field, conditional ReleaseMutex
+  - `src/VoiceClip/Services/SpeechRecognitionService.cs` — volatile _isRecording, Dispose timeout
+  - `src/VoiceClip/Models/AppSettings.cs` — Math.Clamp validation on setters
+  - `src/VoiceClip/Services/HistoryService.cs` — Atomic file writes, reentrant lock fix
+  - `src/VoiceClip/Controls/DictationEntryItem.xaml` — Deleted (dead code)
+- Key technical decisions:
+  - Used `File.Replace` for existing files and `File.Move` for first write (Replace requires destination to exist)
+  - Used `volatile` on `_isRecording` instead of full lock — sufficient for bool flag on x64
+  - Added 2-second timeout to Dispose `.Wait()` instead of removing it entirely — balances cleanup vs deadlock risk
+- Problems encountered:
+  - Initial atomic write using `File.Replace` failed on first write (destination doesn't exist) — caught by test, fixed with exists-check
+- Items completed in this session:
+  - 7 issues identified and fixed (1 Critical, 1 High, 3 Medium, 2 Low)
+- Verification performed: `dotnet build` (0/0), `dotnet test` (53/53)
+
+---
+
 ## Session 3: 2026-04-28 13:17 CDT — End-of-Day Consolidation
 
 - Coding CLI used: Claude Code CLI

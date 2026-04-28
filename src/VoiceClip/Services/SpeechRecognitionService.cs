@@ -9,7 +9,7 @@ namespace VoiceClip.Services;
 /// </summary>
 public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
 {
-    private bool _isRecording;
+    private volatile bool _isRecording;
     private DateTime _recordingStartTime;
     private readonly string _language;
     private readonly int _silenceTimeoutSeconds;
@@ -168,7 +168,8 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
                 var stopTask = _recognizer?.ContinuousRecognitionSession.StopAsync();
                 if (stopTask != null)
                 {
-                    WinRTAsyncHelper.AsTask(stopTask).Wait();
+                    var task = WinRTAsyncHelper.AsTask(stopTask);
+                    task.Wait(TimeSpan.FromSeconds(2));
                 }
             }
             catch

@@ -19,19 +19,19 @@ public class AppSettings : INotifyPropertyChanged
     public string Language
     {
         get => _language;
-        set { _language = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Language))); }
+        set { _language = string.IsNullOrWhiteSpace(value) ? "en-US" : value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Language))); }
     }
 
     public int SilenceTimeoutSeconds
     {
         get => _silenceTimeoutSeconds;
-        set { _silenceTimeoutSeconds = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SilenceTimeoutSeconds))); }
+        set { _silenceTimeoutSeconds = Math.Clamp(value, 10, 300); PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SilenceTimeoutSeconds))); }
     }
 
     public int MaxHistoryEntries
     {
         get => _maxHistoryEntries;
-        set { _maxHistoryEntries = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MaxHistoryEntries))); }
+        set { _maxHistoryEntries = Math.Clamp(value, 10, 10000); PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MaxHistoryEntries))); }
     }
 
     public bool RunOnStartup

@@ -95,7 +95,7 @@ public class HistoryService : IHistoryService
         {
             if (string.IsNullOrWhiteSpace(query))
             {
-                return GetAll();
+                return _entries.OrderByDescending(e => e.Timestamp).ToList().AsReadOnly();
             }
 
             return _entries
@@ -146,7 +146,16 @@ public class HistoryService : IHistoryService
             }
 
             var json = JsonSerializer.Serialize(_entries, _jsonOptions);
-            File.WriteAllText(_filePath, json);
+            var tempFile = _filePath + ".tmp";
+            File.WriteAllText(tempFile, json);
+            if (File.Exists(_filePath))
+            {
+                File.Replace(tempFile, _filePath, null);
+            }
+            else
+            {
+                File.Move(tempFile, _filePath);
+            }
         }
         catch
         {

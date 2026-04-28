@@ -18,6 +18,7 @@ public partial class App : Application
 {
     private const string MutexName = "VoiceClip_SingleInstance_{B7E3F2A1-4D5C-6E8A-9F0B-1C2D3E4F5A6B}";
     private Mutex? _mutex;
+    private bool _ownsMutex;
     private MainWindow? _mainWindow;
     private Tray.TrayIconManager? _trayIconManager;
     private HotkeyService? _hotkeyService;
@@ -57,6 +58,7 @@ public partial class App : Application
 
         // Single instance enforcement
         _mutex = new Mutex(true, MutexName, out bool createdNew);
+        _ownsMutex = createdNew;
         if (!createdNew)
         {
             MessageBox.Show("VoiceClip is already running.", "VoiceClip",
@@ -254,7 +256,10 @@ public partial class App : Application
 
         if (_mutex != null)
         {
-            _mutex.ReleaseMutex();
+            if (_ownsMutex)
+            {
+                _mutex.ReleaseMutex();
+            }
             _mutex.Dispose();
         }
 
