@@ -1,3 +1,7 @@
+using System.Drawing;
+using System.IO;
+using System.Windows;
+
 namespace VoiceClip.Tray;
 
 /// <summary>
@@ -19,6 +23,18 @@ public class TrayIconManager : IDisposable
         {
             _notifyIcon = new Hardcodet.Wpf.TaskbarNotification.TaskbarIcon();
 
+            // Try to load custom icon, fall back to system icon
+            var icon = LoadIcon();
+            if (icon != null)
+            {
+                _notifyIcon.Icon = icon;
+            }
+            else
+            {
+                // Use system microphone icon as fallback
+                _notifyIcon.Icon = SystemIcons.Information;
+            }
+
             _notifyIcon.ContextMenu = CreateContextMenu();
             _notifyIcon.ToolTipText = "VoiceClip - Ready";
 
@@ -31,11 +47,33 @@ public class TrayIconManager : IDisposable
     }
 
     /// <summary>
+    /// Returns the TaskbarIcon for use by toast notifications.
+    /// </summary>
+    public Hardcodet.Wpf.TaskbarNotification.TaskbarIcon? TaskbarIcon => _notifyIcon;
+
+    /// <summary>
     /// Sets the tray icon state.
     /// </summary>
     public void SetState(TrayState state, string? message = null)
     {
         if (_notifyIcon == null) return;
+
+        // Try to load state-specific icon
+        var icon = LoadIconForState(state);
+        if (icon != null)
+        {
+            _notifyIcon.Icon = icon;
+        }
+        else
+        {
+            // Use color-coded system icons as fallback
+            _notifyIcon.Icon = state switch
+            {
+                TrayState.Recording => SystemIcons.Exclamation,
+                TrayState.Error => SystemIcons.Error,
+                _ => SystemIcons.Information
+            };
+        }
 
         _notifyIcon.ToolTipText = state switch
         {
@@ -44,6 +82,44 @@ public class TrayIconManager : IDisposable
             TrayState.Error => $"VoiceClip - Error: {message ?? "Unknown"}",
             _ => "VoiceClip"
         };
+    }
+
+    private Icon? LoadIcon()
+    {
+        try
+        {
+            var exeDir = AppDomain.CurrentDomain.BaseDirectory;
+            var iconPath = Path.Combine(exeDir, "Assets", "mic-idle.ico");
+            if (File.Exists(iconPath))
+            {
+                return new Icon(iconPath);
+            }
+        }
+        catch { }
+        return null;
+    }
+
+    private Icon? LoadIconForState(TrayState state)
+    {
+        try
+        {
+            var exeDir = AppDomain.CurrentDomain.BaseDirectory;
+            var filename = state switch
+            {
+                TrayState.Idle => "mic-idle.ico",
+                TrayState.Recording => "mic-recording.ico",
+                TrayState.Error => "mic-error.ico",
+                _ => "mic-idle.ico"
+            };
+
+            var iconPath = Path.Combine(exeDir, "Assets", filename);
+            if (File.Exists(iconPath))
+            {
+                return new Icon(iconPath);
+            }
+        }
+        catch { }
+        return null;
     }
 
     private System.Windows.Controls.ContextMenu CreateContextMenu()

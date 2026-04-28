@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Interop;
 using VoiceClip.Helpers;
 using VoiceClip.Models;
 using VoiceClip.Services;
@@ -14,7 +15,7 @@ namespace VoiceClip;
 /// </summary>
 public partial class App : Application
 {
-    private const string MutexName = "VoiceClip_SingleInstance";
+    private const string MutexName = "VoiceClip_SingleInstance_{B7E3F2A1-4D5C-6E8A-9F0B-1C2D3E4F5A6B}";
     private Mutex? _mutex;
     private MainWindow? _mainWindow;
     private Tray.TrayIconManager? _trayIconManager;
@@ -61,7 +62,9 @@ public partial class App : Application
 
         // Create hidden main window (for HWND and message pump)
         _mainWindow = new MainWindow();
-        _mainWindow.Show();
+        // Force handle creation without showing the window
+        var helper = new WindowInteropHelper(_mainWindow);
+        helper.EnsureHandle();
 
         // Initialize tray icon
         _trayIconManager = new Tray.TrayIconManager();
@@ -70,18 +73,18 @@ public partial class App : Application
         _trayIconManager.SettingsClicked += OnSettingsClicked;
         _trayIconManager.ExitClicked += OnExitClicked;
 
-        // Initialize hotkeys
+        // Initialize toast notifications with the actual TaskbarIcon
+        _toastNotification = new ToastNotification(_trayIconManager.TaskbarIcon);
+
+        // Initialize hotkeys and wire WM_HOTKEY message pump
         _hotkeyService = new HotkeyService(_mainWindow.WindowHandle);
         _hotkeyService.HotkeyPressed += OnHotkeyPressed;
+        _mainWindow.InitializeHotkeyHook(_hotkeyService);
 
         if (!_hotkeyService.RegisterDefaultHotkeys())
         {
-            var toast = new ToastNotification(null);
-            toast.ShowError("Failed to register hotkeys. Another application may be using them.");
+            _toastNotification.ShowError("Failed to register hotkeys. Another application may be using them.");
         }
-
-        // Initialize toast
-        _toastNotification = new ToastNotification(null);
 
         // Wire speech events
         _speechService.PartialResultReceived += OnPartialResult;
@@ -136,12 +139,9 @@ public partial class App : Application
             if (!string.IsNullOrWhiteSpace(text))
             {
                 var duration = (DateTime.UtcNow - _recordingStartTime).TotalSeconds;
-                var entry = _historyService?.Add(text, duration);
+                _historyService?.Add(text, duration);
+                _clipboardService?.SetText(text);
                 _toastNotification?.Show("Copied to clipboard");
-                if (entry != null && _clipboardService != null)
-                {
-                    _clipboardService.SetText(text);
-                }
             }
         }
         else
@@ -172,7 +172,7 @@ public partial class App : Application
 
     private void OnDictationCompleted(object? sender, DictationResultEventArgs e)
     {
-        // Handled in ToggleDictationAsync
+        // Handled in ToggleDictationAsync via stop
     }
 
     private void ShowHistoryPopup()

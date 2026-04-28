@@ -1,37 +1,54 @@
+using System.ComponentModel;
+
 namespace VoiceClip.Models;
 
 /// <summary>
 /// Application settings persisted to %APPDATA%\VoiceClip\settings.json.
 /// </summary>
-public class AppSettings
+public class AppSettings : INotifyPropertyChanged
 {
-    /// <summary>
-    /// Speech recognition language (default: en-US).
-    /// </summary>
-    public string Language { get; set; } = "en-US";
+    private string _language = "en-US";
+    private int _silenceTimeoutSeconds = 60;
+    private int _maxHistoryEntries = 500;
+    private bool _runOnStartup;
+    private string _dictateHotkey = "Ctrl+Alt+D";
+    private string _historyHotkey = "Ctrl+Alt+V";
 
-    /// <summary>
-    /// Seconds of silence before auto-stopping dictation (default: 60, range: 10-300).
-    /// </summary>
-    public int SilenceTimeoutSeconds { get; set; } = 60;
+    public event PropertyChangedEventHandler? PropertyChanged;
 
-    /// <summary>
-    /// Maximum number of history entries to keep (default: 500, range: 50-5000).
-    /// </summary>
-    public int MaxHistoryEntries { get; set; } = 500;
+    public string Language
+    {
+        get => _language;
+        set { _language = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Language))); }
+    }
 
-    /// <summary>
-    /// Whether to run VoiceClip on Windows startup.
-    /// </summary>
-    public bool RunOnStartup { get; set; } = false;
+    public int SilenceTimeoutSeconds
+    {
+        get => _silenceTimeoutSeconds;
+        set { _silenceTimeoutSeconds = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SilenceTimeoutSeconds))); }
+    }
 
-    /// <summary>
-    /// Hotkey combination for toggling dictation (default: Ctrl+Alt+D).
-    /// </summary>
-    public string DictateHotkey { get; set; } = "Ctrl+Alt+D";
+    public int MaxHistoryEntries
+    {
+        get => _maxHistoryEntries;
+        set { _maxHistoryEntries = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MaxHistoryEntries))); }
+    }
 
-    /// <summary>
-    /// Hotkey combination for showing history popup (default: Ctrl+Alt+V).
-    /// </summary>
-    public string HistoryHotkey { get; set; } = "Ctrl+Alt+V";
+    public bool RunOnStartup
+    {
+        get => _runOnStartup;
+        set { _runOnStartup = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(RunOnStartup))); }
+    }
+
+    public string DictateHotkey
+    {
+        get => _dictateHotkey;
+        set { _dictateHotkey = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DictateHotkey))); }
+    }
+
+    public string HistoryHotkey
+    {
+        get => _historyHotkey;
+        set { _historyHotkey = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HistoryHotkey))); }
+    }
 }

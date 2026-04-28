@@ -42,6 +42,6 @@ public partial class PartialResultsIndicator : Window
     {
         var workArea = SystemParameters.WorkArea;
         Left = workArea.Right - Width - 20;
-        Top = workArea.Bottom - Height - 20;
+        Top = workArea.Bottom - Height - 110; // Offset above history popup area
     }
 }
