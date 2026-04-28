@@ -9,11 +9,9 @@
     <RootNamespace>VoiceClip</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WindowsSdkPackageVersion>10.0.22621.38</WindowsSdkPackageVersion>
-    <PublishTrimmed>true</PublishTrimmed>
-    <TrimMode>full</TrimMode>
+    <PublishTrimmed>false</PublishTrimmed>
     <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
     <NoWarn>$(NoWarn);NETSDK1168</NoWarn>
-    <TrimmerRemoveSymbols>true</TrimmerRemoveSymbols>
     <_SuppressWpfTrimError>true</_SuppressWpfTrimError>
   </PropertyGroup>
 
