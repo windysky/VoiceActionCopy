@@ -9,9 +9,10 @@ VoiceClip captures voice dictation into a persistent history, independent of whi
 ## Requirements
 
 - Windows 11 (build 10.0.22621+)
-- .NET 8 Runtime
 - Microphone
 - Speech recognition enabled in Windows Settings
+
+No .NET runtime needed — the published build is self-contained.
 
 ## Quick Start
 
@@ -34,6 +35,18 @@ dotnet test VoiceClip.sln
 ```bash
 dotnet publish src/VoiceClip -c Release -r win-x64 --self-contained -o publish
 ```
+
+Produces a ~53MB self-contained exe with trimming enabled.
+
+## Build Installer
+
+Requires [Inno Setup 6+](https://jrsoftware.org/isdl.php):
+
+```bash
+iscc installer\VoiceClip.iss
+```
+
+Output: `dist/VoiceClip-1.0.0-setup.exe` — includes start menu shortcut, optional run-on-startup, and uninstaller.
 
 ## Icon Generation
 

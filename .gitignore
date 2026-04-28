@@ -13,6 +13,7 @@ obj/
 bin/
 *.user
 publish/
+dist/
 
 # ===========================================
 # Go Build Artifacts
