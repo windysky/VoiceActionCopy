@@ -22,7 +22,6 @@ public partial class App : Application
     private MainWindow? _mainWindow;
     private Tray.TrayIconManager? _trayIconManager;
     private HotkeyService? _hotkeyService;
-    private DateTime _recordingStartTime;
     private SpeechRecognitionService? _speechService;
     private HistoryService? _historyService;
     private ClipboardService? _clipboardService;
@@ -174,7 +173,6 @@ public partial class App : Application
         {
             try
             {
-                _recordingStartTime = DateTime.UtcNow;
                 await _speechService.StartDictationAsync();
                 _trayIconManager?.SetState(Tray.TrayState.Recording);
                 _partialResultsIndicator = new PartialResultsIndicator();
@@ -208,8 +206,15 @@ public partial class App : Application
             if (!string.IsNullOrWhiteSpace(e.Text))
             {
                 _historyService?.Add(e.Text, e.DurationSeconds);
-                _clipboardService?.SetText(e.Text);
-                _toastNotification?.Show("Copied to clipboard");
+                try
+                {
+                    _clipboardService?.SetText(e.Text);
+                    _toastNotification?.Show("Copied to clipboard");
+                }
+                catch (System.Runtime.InteropServices.COMException)
+                {
+                    _toastNotification?.ShowError("Could not copy to clipboard — clipboard is busy");
+                }
             }
         });
     }

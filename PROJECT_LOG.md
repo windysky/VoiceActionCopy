@@ -1,5 +1,23 @@
 # PROJECT_LOG.md — VoiceClip Session History
 
+## Session 5: 2026-04-28 13:35 CDT — Code Review Pass 4
+
+- Coding CLI used: Claude Code CLI
+- Phase(s) worked on: Deep code review (fresh pass), bug identification, fix implementation
+- Concrete changes implemented:
+  - Fixed memory leak in HistoryPopup: EntryCopied event handler was never unsubscribed, causing popup instances to be retained by the long-lived ViewModel
+  - Fixed silent clipboard failure: COMException when clipboard is locked by another process now shows error toast instead of false "Copied to clipboard"
+  - Removed dead _recordingStartTime field in App.xaml.cs (SpeechRecognitionService tracks its own)
+- Files/modules touched:
+  - `src/VoiceClip/App.xaml.cs` — Clipboard COMException handling, removed dead field
+  - `src/VoiceClip/Views/HistoryPopup.xaml.cs` — Unsubscribe EntryCopied in Closed handler
+- Items completed in this session:
+  - 3 issues fixed (2 Medium, 1 Low)
+  - No Critical or High issues found — codebase is stable
+- Verification performed: `dotnet build` (0/0), `dotnet test` (53/53)
+
+---
+
 ## Session 4: 2026-04-28 13:30 CDT — Code Review Pass 3
 
 - Coding CLI used: Claude Code CLI

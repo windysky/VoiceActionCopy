@@ -19,6 +19,7 @@ public partial class HistoryPopup : Window
         DataContext = _viewModel;
 
         _viewModel.EntryCopied += OnEntryCopied;
+        Closed += (s, e) => _viewModel.EntryCopied -= OnEntryCopied;
 
         PositionNearTray();
 
