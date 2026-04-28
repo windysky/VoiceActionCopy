@@ -1,0 +1,52 @@
+<Window x:Class="VoiceClip.Views.PartialResultsIndicator"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="VoiceClip - Recording"
+        Width="350" Height="80"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        Background="Transparent">
+
+    <Border Background="White"
+            CornerRadius="6"
+            BorderBrush="#CCCCCC"
+            BorderThickness="1"
+            Margin="5">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.2"/>
+        </Border.Effect>
+
+        <Grid Margin="12,8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
+                <Ellipse Width="8" Height="8" Fill="Red" Margin="0,0,6,0"
+                         VerticalAlignment="Center">
+                    <Ellipse.Triggers>
+                        <EventTrigger RoutedEvent="Loaded">
+                            <BeginStoryboard>
+                                <Storyboard RepeatBehavior="Forever">
+                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                     From="1" To="0.3" Duration="0:0:0.5"
+                                                     AutoReverse="True"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Ellipse.Triggers>
+                </Ellipse>
+                <TextBlock Text="Recording..." FontSize="11" Foreground="#999999"/>
+            </StackPanel>
+
+            <TextBlock Grid.Row="1"
+                       Text="{Binding PartialText}"
+                       TextTrimming="CharacterEllipsis"
+                       FontSize="14" Foreground="#333333"/>
+        </Grid>
+    </Border>
+</Window>
