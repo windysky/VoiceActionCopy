@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text;
 using VoiceClip.Helpers;
 using Windows.Media.SpeechRecognition;
@@ -105,12 +106,17 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
 
     private async Task InitializeRecognizerAsync()
     {
-        if (_recognizer != null) return;
+        if (_recognizer != null)
+        {
+            LogDebug("InitializeRecognizerAsync: already initialized, skipping");
+            return;
+        }
 
         try
         {
             var language = new Windows.Globalization.Language(_language);
             _recognizer = new SpeechRecognizer(language);
+            LogDebug($"InitializeRecognizerAsync: created with language={_language}, systemSpeechLang={SpeechRecognizer.SystemSpeechLanguage?.LanguageTag}");
 
             _recognizer.ContinuousRecognitionSession.ResultGenerated += OnResultGenerated;
             _recognizer.ContinuousRecognitionSession.Completed += OnSessionCompleted;
@@ -121,7 +127,8 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
             _recognizer.Constraints.Add(
                 new SpeechRecognitionTopicConstraint(SpeechRecognitionScenario.Dictation, "dictation"));
 
-            await _recognizer.CompileConstraintsAsync();
+            var compileResult = await _recognizer.CompileConstraintsAsync();
+            LogDebug($"CompileConstraintsAsync: status={compileResult.Status}");
         }
         catch
         {
@@ -135,18 +142,21 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
     {
         if (_recognizer == null) return;
         await _recognizer.ContinuousRecognitionSession.StartAsync();
+        LogDebug("StartContinuousRecognitionAsync: session started");
     }
 
     private void OnResultGenerated(SpeechContinuousRecognitionSession sender,
         SpeechContinuousRecognitionResultGeneratedEventArgs args)
     {
         var text = args.Result.Text;
+        LogDebug($"OnResultGenerated: text='{text}', confidence={args.Result.Confidence}");
         AppendRecognizedText(text);
     }
 
     private void OnSessionCompleted(SpeechContinuousRecognitionSession sender,
         SpeechContinuousRecognitionCompletedEventArgs args)
     {
+        LogDebug($"OnSessionCompleted: status={args.Status}, _isRecording={_isRecording}");
         if (!_isRecording) return;
 
         _isRecording = false;
@@ -181,5 +191,17 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
         }
         _recognizer?.Dispose();
         _recognizer = null;
+    }
+
+    private static void LogDebug(string message)
+    {
+        try
+        {
+            var logPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "VoiceClip", "debug.log");
+            File.AppendAllText(logPath, $"[{DateTime.UtcNow:O}] {message}\n");
+        }
+        catch { }
     }
 }
