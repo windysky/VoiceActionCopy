@@ -1,65 +1,73 @@
 # PROJECT_HANDOFF.md — VoiceClip
 
-**Last Updated**: 2026-04-28 (Session 2)
-**Status**: Implemented, all known issues resolved
-
----
-
-## Project Summary
+## 1. Project Overview
 
 VoiceClip is a Windows 11 system tray app that captures voice dictation into a persistent clipboard buffer using `Windows.Media.SpeechRecognition` (same engine as Voice Access). Independent of Voice Access — both can coexist.
 
-## Tech Stack
+- Last updated: 2026-04-28 13:17 CDT
+- Last coding CLI used: Claude Code CLI
 
-- C# / .NET 8 WPF
-- Windows.Media.SpeechRecognition (WinRT)
-- Hardcodet.NotifyIcon.Wpf (system tray)
-- Inno Setup 6 (installer)
-- xUnit (53 tests)
+## 2. Current State
 
-## Build & Run
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Core app (tray, hotkeys, speech, history) | Completed | Completed in Session 2026-04-28 |
+| Spec compliance (all REQ-VC-001 through REQ-VC-010) | Completed | Completed in Session 2026-04-28 |
+| Icon generation tool + generated icons | Completed | Completed in Session 2026-04-28 |
+| Self-contained trimmed publish (53MB) | Completed | Completed in Session 2026-04-28 |
+| Inno Setup installer script | Completed | Completed in Session 2026-04-28 |
+| Code review (2 passes, 6 bugs fixed) | Completed | Completed in Session 2026-04-28 13:17 CDT |
+| Runtime end-to-end test with microphone | Not started | Needs manual testing on target machine |
 
-```
-dotnet build src/VoiceClip/VoiceClip.csproj
-dotnet run --project src/VoiceClip
-dotnet test tests/VoiceClip.Tests
-```
-
-## Current State
-
-- **SPEC**: SPEC-VOICECLIP-001 — Status: Implemented
 - **Build**: 0 errors, 0 warnings
 - **Tests**: 53/53 passing
-- **Published exe**: 53MB (self-contained + trimmed)
-- **Installer**: `installer/VoiceClip.iss` (Inno Setup)
+- **SPEC**: SPEC-VOICECLIP-001 — Status: Implemented
+- **Published exe**: 53MB (self-contained + full trimming)
+- **Branch**: main (9 commits ahead of origin)
 
-## Code Review Sessions
+## 3. Execution Plan Status
 
-### Session 1 (2026-04-28)
+| Phase | Status | Last Updated |
+|-------|--------|-------------|
+| SPEC-VOICECLIP-001 Phase 1: Core Infrastructure | Completed | 2026-04-28 |
+| SPEC-VOICECLIP-001 Phase 2: Speech Recognition | Completed | 2026-04-28 |
+| SPEC-VOICECLIP-001 Phase 3: History & Clipboard | Completed | 2026-04-28 |
+| SPEC-VOICECLIP-001 Phase 4: Polish & Settings | Completed | 2026-04-28 |
+| SPEC-VOICECLIP-001 Phase 5: Testing & Packaging | Completed | 2026-04-28 |
+| Icon generation + deployment fix | Completed | 2026-04-28 13:17 CDT |
+| Trimming + installer setup | Completed | 2026-04-28 13:17 CDT |
+| Code review pass 1 (WinRT Dispose fix) | Completed | 2026-04-28 13:17 CDT |
+| Code review pass 2 (auto-stop, clear-all, preview, startup) | Completed | 2026-04-28 13:17 CDT |
 
-| # | Severity | Issue | Status |
-|---|----------|-------|--------|
-| 1 | 🟠 High | Dispose() called .AsTask() directly on WinRT — crash at runtime | ✅ Fixed (a1e2b0f) |
-| 2 | 🟡 Medium | Preview truncation no ellipsis | ✅ Fixed (7b06403) |
-| 3 | 🟡 Medium | Startup failure not reported | ✅ Fixed (7b06403) |
+## 4. Outstanding Work
 
-### Session 2 (2026-04-28)
+None. All identified issues resolved across two code review passes.
 
-| # | Severity | Issue | Status |
-|---|----------|-------|--------|
-| 1 | 🔴 Critical | Auto-stop (silence timeout) loses dictation text — OnSessionCompleted didn't save or notify App | ✅ Fixed (7b06403) |
-| 2 | 🟠 High | "Clear All" has no confirmation dialog (SPEC REQ-VC-004) | ✅ Fixed (7b06403) |
-| 3 | 🟡 Medium | Preview truncation no ellipsis | ✅ Fixed (7b06403) |
-| 4 | 🟡 Medium | Startup registration failure not shown to user | ✅ Fixed (7b06403) |
+## 5. Risks, Open Questions, and Assumptions
 
-### All Issues Resolved
+| Item | Status | Date Opened | Notes |
+|------|--------|-------------|-------|
+| WPF trimming with `_SuppressWpfTrimError` is unsupported by Microsoft | Mitigated | 2026-04-28 | VoiceClip is TrimmerRootAssembly; 53MB trimmed exe builds and tests pass. Runtime test needed. |
+| Inno Setup not on PATH by default | Mitigated | 2026-04-28 | User installed Inno Setup 6 GUI. CLI needs fresh terminal for PATH. |
 
-No known remaining issues. All SPEC requirements implemented.
+## 6. Verification Status
 
-## Key Architecture Decisions
+| Item | Method | Result | Date/Time |
+|------|--------|--------|-----------|
+| Build | `dotnet build` | 0 errors, 0 warnings | 2026-04-28 13:17 CDT |
+| Unit tests | `dotnet test` | 53/53 pass | 2026-04-28 13:17 CDT |
+| Icons in build output | `ls bin/.../Assets/` | 3 ico files present | 2026-04-28 |
+| Trimmed publish size | `ls -lh publish/VoiceClip.exe` | 53MB | 2026-04-28 |
+| Runtime end-to-end dictation | Manual test | Not yet verified | — |
+| Inno Setup installer build | Manual test (GUI) | User reported path/type errors, all fixed | 2026-04-28 |
 
-1. **WinRTAsyncHelper** — Reflection-based AsTask() wrapper for explicit `.AsTask()` calls. `await` keyword works fine (uses GetAwaiter, not AsTask).
-2. **Trimming** — Full trim mode with `_SuppressWpfTrimError=true`. VoiceClip is a TrimmerRootAssembly.
-3. **DictationCompleted event** — Raised from both `StopDictationAsync` (manual stop) and `OnSessionCompleted` (auto-stop). App's `OnDictationCompleted` handler is the single point for saving to history, clipboard, and UI updates.
-4. **Single-instance** — Named mutex with GUID.
-5. **Storage** — JSON files in `%APPDATA%\VoiceClip\` (history.json, settings.json, error.log).
+## 7. Restart Instructions
+
+The project is feature-complete with all known bugs fixed. Next session should:
+
+1. **Runtime test**: Launch `publish\VoiceClip.exe`, test dictation with microphone, verify tray icons, hotkeys, history popup, auto-stop saves text
+2. **Build installer**: Run `iscc installer\VoiceClip.iss` (ensure fresh terminal after Inno Setup install)
+3. **Push to origin**: `git push` (9 commits ahead)
+4. If runtime issues found, check `%APPDATA%\VoiceClip\error.log`
+
+Last updated: 2026-04-28 13:17 CDT
