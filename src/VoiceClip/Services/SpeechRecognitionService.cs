@@ -98,10 +98,29 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
     /// </summary>
     public void AppendRecognizedText(string text)
     {
-        if (string.IsNullOrEmpty(text)) return;
+        if (string.IsNullOrWhiteSpace(text)) return;
 
-        _recognizedText.Append(text);
-        PartialResultReceived?.Invoke(this, new PartialResultEventArgs { Text = text });
+        var aggregatedText = AppendRecognizedSegment(text);
+        PartialResultReceived?.Invoke(this, new PartialResultEventArgs { Text = aggregatedText });
+    }
+
+    private string AppendRecognizedSegment(string text)
+    {
+        var trimmedText = text.Trim();
+        if (_recognizedText.Length > 0 &&
+            !char.IsWhiteSpace(_recognizedText[^1]) &&
+            !StartsWithPunctuation(trimmedText))
+        {
+            _recognizedText.Append(' ');
+        }
+
+        _recognizedText.Append(trimmedText);
+        return _recognizedText.ToString();
+    }
+
+    private static bool StartsWithPunctuation(string text)
+    {
+        return !string.IsNullOrEmpty(text) && char.IsPunctuation(text[0]);
     }
 
     private async Task InitializeRecognizerAsync()

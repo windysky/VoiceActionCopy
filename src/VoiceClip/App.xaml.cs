@@ -81,6 +81,8 @@ public partial class App : Application
 
         // Initialize ViewModel
         _historyViewModel = new HistoryViewModel(_historyService, _clipboardService);
+        _historyViewModel.EntryCopied += OnHistoryEntryCopied;
+        _historyViewModel.EntryCopyFailed += OnHistoryEntryCopyFailed;
 
         // Create hidden main window (for HWND and message pump)
         _mainWindow = new MainWindow();
@@ -258,6 +260,16 @@ public partial class App : Application
         ShowHistoryPopup();
     }
 
+    private void OnHistoryEntryCopied(object? sender, EventArgs e)
+    {
+        _toastNotification?.Show("Copied to clipboard");
+    }
+
+    private void OnHistoryEntryCopyFailed(object? sender, EntryCopyFailedEventArgs e)
+    {
+        _toastNotification?.ShowError(e.Message);
+    }
+
     private void OnSettingsClicked(object? sender, EventArgs e)
     {
         Dispatcher.Invoke(() =>
@@ -279,6 +291,11 @@ public partial class App : Application
         _hotkeyService?.Dispose();
         _trayIconManager?.Dispose();
         _speechService?.Dispose();
+        if (_historyViewModel != null)
+        {
+            _historyViewModel.EntryCopied -= OnHistoryEntryCopied;
+            _historyViewModel.EntryCopyFailed -= OnHistoryEntryCopyFailed;
+        }
         _historyViewModel?.Dispose();
         _partialResultsIndicator?.Close();
 

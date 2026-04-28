@@ -61,10 +61,12 @@
 
             <!-- History List -->
             <ListBox Grid.Row="2"
+                     x:Name="HistoryList"
                      Margin="16,0,16,8"
                      ItemsSource="{Binding Entries}"
                      SelectedItem="{Binding SelectedEntry}"
                      BorderThickness="0"
+                     PreviewMouseLeftButtonUp="HistoryList_PreviewMouseLeftButtonUp"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
@@ -88,6 +90,13 @@
                             <TextBlock Grid.Row="1" Grid.Column="1"
                                        Text="{Binding DurationSeconds, StringFormat='{}{0:F1}s'}"
                                        FontSize="11" Foreground="#999999"/>
+                            <Button Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"
+                                    Content="Delete"
+                                    Padding="8,4"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                    CommandParameter="{Binding}"/>
                         </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>

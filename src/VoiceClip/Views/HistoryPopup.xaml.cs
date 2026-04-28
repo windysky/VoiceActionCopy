@@ -1,5 +1,7 @@
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using VoiceClip.Models;
 using VoiceClip.ViewModels;
 
 namespace VoiceClip.Views;
@@ -46,6 +48,42 @@ public partial class HistoryPopup : Window
     private void OnEntryCopied(object? sender, EventArgs e)
     {
         // Brief visual feedback could be added here
+    }
+
+    private void HistoryList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (IsClickOnButton(e.OriginalSource as DependencyObject))
+        {
+            return;
+        }
+
+        var clickedElement = e.OriginalSource as DependencyObject;
+        while (clickedElement != null && clickedElement is not System.Windows.Controls.ListBoxItem)
+        {
+            clickedElement = VisualTreeHelper.GetParent(clickedElement);
+        }
+
+        if (clickedElement is System.Windows.Controls.ListBoxItem item &&
+            item.DataContext is DictationEntry entry)
+        {
+            _viewModel.SelectedEntry = entry;
+            _viewModel.CopyCommand.Execute(entry);
+        }
+    }
+
+    private static bool IsClickOnButton(DependencyObject? element)
+    {
+        while (element != null)
+        {
+            if (element is System.Windows.Controls.Button)
+            {
+                return true;
+            }
+
+            element = VisualTreeHelper.GetParent(element);
+        }
+
+        return false;
     }
 
     private void Window_Deactivated(object sender, EventArgs e)

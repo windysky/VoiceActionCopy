@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Security;
 using System.Windows.Input;
 using VoiceClip.Models;
 using VoiceClip.Services;
@@ -20,6 +22,7 @@ public class HistoryViewModel : INotifyPropertyChanged, IDisposable
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public event EventHandler? EntryCopied;
+    public event EventHandler<EntryCopyFailedEventArgs>? EntryCopyFailed;
 
     public HistoryViewModel(IHistoryService historyService, IClipboardService clipboardService)
     {
@@ -99,8 +102,19 @@ public class HistoryViewModel : INotifyPropertyChanged, IDisposable
     {
         if (entry == null) return;
 
-        _clipboardService.SetText(entry.Text ?? string.Empty);
-        EntryCopied?.Invoke(this, EventArgs.Empty);
+        try
+        {
+            _clipboardService.SetText(entry.Text ?? string.Empty);
+            EntryCopied?.Invoke(this, EventArgs.Empty);
+        }
+        catch (COMException)
+        {
+            EntryCopyFailed?.Invoke(this, new EntryCopyFailedEventArgs("Could not copy to clipboard - clipboard is busy"));
+        }
+        catch (SecurityException)
+        {
+            EntryCopyFailed?.Invoke(this, new EntryCopyFailedEventArgs("Could not copy to clipboard - access denied"));
+        }
     }
 
     private void OnDeleteEntry(DictationEntry? entry)
@@ -120,6 +134,16 @@ public class HistoryViewModel : INotifyPropertyChanged, IDisposable
     {
         // No unmanaged resources to clean up
     }
+}
+
+public class EntryCopyFailedEventArgs : EventArgs
+{
+    public EntryCopyFailedEventArgs(string message)
+    {
+        Message = message;
+    }
+
+    public string Message { get; }
 }
 
 /// <summary>

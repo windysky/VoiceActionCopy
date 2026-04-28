@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Moq;
+using System.Runtime.InteropServices;
 using VoiceClip.Models;
 using VoiceClip.Services;
 using VoiceClip.ViewModels;
@@ -83,6 +84,21 @@ public class HistoryViewModelTests
 
         // Assert
         eventRaised.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CopyCommand_WhenClipboardBusy_RaisesFailureEvent()
+    {
+        var entry = new DictationEntry { Text = "Copy me" };
+        string? failureMessage = null;
+        _clipboardServiceMock
+            .Setup(s => s.SetText("Copy me"))
+            .Throws(new COMException());
+        _viewModel.EntryCopyFailed += (s, e) => failureMessage = e.Message;
+
+        _viewModel.CopyCommand.Execute(entry);
+
+        failureMessage.Should().Be("Could not copy to clipboard - clipboard is busy");
     }
 
     [Fact]

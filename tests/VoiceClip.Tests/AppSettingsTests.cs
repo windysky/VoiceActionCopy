@@ -59,4 +59,39 @@ public class AppSettingsTests
         // Assert
         settings.Language.Should().Be("ko-KR");
     }
+
+    [Fact]
+    public void MaxHistoryEntries_IsClampedToConfiguredRange()
+    {
+        var settings = new AppSettings
+        {
+            MaxHistoryEntries = 10
+        };
+
+        settings.MaxHistoryEntries.Should().Be(50);
+
+        settings.MaxHistoryEntries = 6000;
+        settings.MaxHistoryEntries.Should().Be(5000);
+    }
+
+    [Fact]
+    public void Clone_AndCopyFrom_RoundTripSettings()
+    {
+        var settings = new AppSettings
+        {
+            Language = "de-DE",
+            SilenceTimeoutSeconds = 90,
+            MaxHistoryEntries = 750,
+            RunOnStartup = true
+        };
+
+        var clone = settings.Clone();
+        var copy = new AppSettings();
+        copy.CopyFrom(clone);
+
+        copy.Language.Should().Be("de-DE");
+        copy.SilenceTimeoutSeconds.Should().Be(90);
+        copy.MaxHistoryEntries.Should().Be(750);
+        copy.RunOnStartup.Should().BeTrue();
+    }
 }

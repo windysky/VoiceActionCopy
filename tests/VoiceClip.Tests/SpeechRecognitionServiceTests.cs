@@ -44,6 +44,20 @@ public class SpeechRecognitionServiceTests
     }
 
     [Fact]
+    public void AppendRecognizedText_MultipleSegments_PreservesWordSpacing()
+    {
+        var service = new SpeechRecognitionService();
+        PartialResultEventArgs? receivedArgs = null;
+        service.PartialResultReceived += (s, e) => receivedArgs = e;
+
+        service.AppendRecognizedText("Hello");
+        service.AppendRecognizedText("world");
+
+        receivedArgs.Should().NotBeNull();
+        receivedArgs!.Text.Should().Be("Hello world");
+    }
+
+    [Fact]
     public void AppendRecognizedText_WithNullOrEmpty_DoesNotRaiseEvent()
     {
         // Arrange

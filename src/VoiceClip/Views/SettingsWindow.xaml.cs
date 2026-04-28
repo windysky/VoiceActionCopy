@@ -11,6 +11,7 @@ public partial class SettingsWindow : Window
 {
     private readonly ISettingsService _settingsService;
     private readonly AppSettings _settings;
+    private readonly AppSettings _editableSettings;
     private readonly StartupService _startupService;
 
     public SettingsWindow(ISettingsService settingsService, AppSettings settings)
@@ -19,11 +20,19 @@ public partial class SettingsWindow : Window
         _settingsService = settingsService;
         _settings = settings;
         _startupService = new StartupService();
-        DataContext = _settings;
+        _editableSettings = settings.Clone();
+        _editableSettings.RunOnStartup = _startupService.IsStartupEnabled();
+        DataContext = _editableSettings;
     }
 
     private void SaveButton_Click(object sender, RoutedEventArgs e)
     {
+        var requiresRestart =
+            _settings.Language != _editableSettings.Language ||
+            _settings.SilenceTimeoutSeconds != _editableSettings.SilenceTimeoutSeconds ||
+            _settings.MaxHistoryEntries != _editableSettings.MaxHistoryEntries;
+
+        _settings.CopyFrom(_editableSettings);
         _settingsService.Save(_settings);
 
         if (_settings.RunOnStartup)
@@ -38,6 +47,15 @@ public partial class SettingsWindow : Window
         else
         {
             _startupService.SetStartup(false);
+        }
+
+        if (requiresRestart)
+        {
+            MessageBox.Show(
+                "Language, silence timeout, and history size changes apply the next time VoiceClip starts.",
+                "VoiceClip",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
 
         DialogResult = true;

@@ -55,7 +55,16 @@ public class SettingsService : ISettingsService
             }
 
             var json = JsonSerializer.Serialize(settings, _jsonOptions);
-            File.WriteAllText(_filePath, json);
+            var tempFile = _filePath + ".tmp";
+            File.WriteAllText(tempFile, json);
+            if (File.Exists(_filePath))
+            {
+                File.Replace(tempFile, _filePath, null);
+            }
+            else
+            {
+                File.Move(tempFile, _filePath);
+            }
         }
         catch
         {

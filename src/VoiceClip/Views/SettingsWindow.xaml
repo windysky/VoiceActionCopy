@@ -29,7 +29,8 @@
         <!-- Language -->
         <TextBlock Grid.Row="0" Grid.Column="0" Text="Language:" VerticalAlignment="Center" Margin="0,0,0,12"/>
         <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,12"
-                  SelectedItem="{Binding Language}"
+                  SelectedValue="{Binding Language}"
+                  SelectedValuePath="Content"
                   x:Name="LanguageComboBox">
             <ComboBoxItem Content="en-US"/>
             <ComboBoxItem Content="ko-KR"/>

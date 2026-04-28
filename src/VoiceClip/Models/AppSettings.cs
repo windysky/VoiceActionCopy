@@ -31,7 +31,7 @@ public class AppSettings : INotifyPropertyChanged
     public int MaxHistoryEntries
     {
         get => _maxHistoryEntries;
-        set { _maxHistoryEntries = Math.Clamp(value, 10, 10000); PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MaxHistoryEntries))); }
+        set { _maxHistoryEntries = Math.Clamp(value, 50, 5000); PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MaxHistoryEntries))); }
     }
 
     public bool RunOnStartup
@@ -50,5 +50,30 @@ public class AppSettings : INotifyPropertyChanged
     {
         get => _historyHotkey;
         set { _historyHotkey = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HistoryHotkey))); }
+    }
+
+    public AppSettings Clone()
+    {
+        return new AppSettings
+        {
+            Language = Language,
+            SilenceTimeoutSeconds = SilenceTimeoutSeconds,
+            MaxHistoryEntries = MaxHistoryEntries,
+            RunOnStartup = RunOnStartup,
+            DictateHotkey = DictateHotkey,
+            HistoryHotkey = HistoryHotkey
+        };
+    }
+
+    public void CopyFrom(AppSettings other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+
+        Language = other.Language;
+        SilenceTimeoutSeconds = other.SilenceTimeoutSeconds;
+        MaxHistoryEntries = other.MaxHistoryEntries;
+        RunOnStartup = other.RunOnStartup;
+        DictateHotkey = other.DictateHotkey;
+        HistoryHotkey = other.HistoryHotkey;
     }
 }
