@@ -1,11 +1,10 @@
 using System.Text;
-using VoiceClip.Helpers;
+using Windows.Media.SpeechRecognition;
 
 namespace VoiceClip.Services;
 
 /// <summary>
 /// Continuous speech recognition using Windows.Media.SpeechRecognition.
-/// Uses reflection-based async wrapper to avoid WinRT/SDK type conflicts.
 /// </summary>
 public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
 {
@@ -14,9 +13,7 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
     private readonly string _language;
     private readonly int _silenceTimeoutSeconds;
     private readonly StringBuilder _recognizedText = new();
-
-    // WinRT types (loaded via reflection to avoid compile-time conflicts)
-    private object? _recognizer;
+    private SpeechRecognizer? _recognizer;
 
     public bool IsRecording => _isRecording;
 
@@ -61,7 +58,10 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
 
         try
         {
-            await StopContinuousRecognitionAsync();
+            if (_recognizer?.ContinuousRecognitionSession != null)
+            {
+                await _recognizer.ContinuousRecognitionSession.StopAsync();
+            }
         }
         catch
         {
@@ -82,9 +82,8 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
     {
         try
         {
-            // Try to create a SpeechRecognizer to check availability
             await InitializeRecognizerAsync();
-            return true;
+            return _recognizer != null;
         }
         catch
         {
@@ -107,155 +106,33 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
     {
         if (_recognizer != null) return;
 
-        // Use Windows.Media.SpeechRecognition via WinRT
-        // The actual WinRT object creation happens at runtime
-        var speechRecognizerType = Type.GetType(
-            "Windows.Media.SpeechRecognition.SpeechRecognizer, Microsoft.Windows.SDK.NET");
+        var language = new Windows.Globalization.Language(_language);
+        _recognizer = new SpeechRecognizer(language);
 
-        if (speechRecognizerType == null)
-        {
-            throw new InvalidOperationException(
-                "Windows.Media.SpeechRecognition is not available. " +
-                "Ensure Windows 11 with speech recognition enabled.");
-        }
+        _recognizer.ContinuousRecognitionSession.ResultGenerated += OnResultGenerated;
+        _recognizer.ContinuousRecognitionSession.Completed += OnSessionCompleted;
 
-        _recognizer = Activator.CreateInstance(speechRecognizerType, _language);
+        _recognizer.Timeouts.EndSilenceTimeout = TimeSpan.FromSeconds(_silenceTimeoutSeconds);
 
-        // Configure for dictation
-        await ConfigureDictationAsync();
-    }
-
-    private async Task ConfigureDictationAsync()
-    {
-        if (_recognizer == null) return;
-
-        var recognizerType = _recognizer.GetType();
-
-        // Get ContinuousRecognitionSession
-        var sessionProperty = recognizerType.GetProperty("ContinuousRecognitionSession");
-        var session = sessionProperty?.GetValue(_recognizer);
-
-        if (session != null)
-        {
-            // Set timeout
-            var timeoutProperty = session.GetType().GetProperty("StopOnSilenceTimeout");
-            if (timeoutProperty?.CanWrite == true)
-            {
-                timeoutProperty.SetValue(session, TimeSpan.FromSeconds(_silenceTimeoutSeconds));
-            }
-        }
-
-        // Compile constraints
-        var compileMethod = _recognizer.GetType().GetMethod("CompileConstraintsAsync");
-        if (compileMethod != null)
-        {
-            var asyncAction = compileMethod.Invoke(_recognizer, null);
-            if (asyncAction != null)
-            {
-                await WinRTAsyncHelper.AsTask(asyncAction);
-            }
-        }
+        await _recognizer.CompileConstraintsAsync();
     }
 
     private async Task StartContinuousRecognitionAsync()
     {
         if (_recognizer == null) return;
-
-        var recognizerType = _recognizer.GetType();
-        var sessionProperty = recognizerType.GetProperty("ContinuousRecognitionSession");
-        var session = sessionProperty?.GetValue(_recognizer);
-
-        if (session == null) return;
-
-        // Wire up events
-        WireUpResultGeneratedEvent(session);
-        WireUpCompletedEvent(session);
-
-        // Start async
-        var startMethod = session.GetType().GetMethod("StartAsync");
-        if (startMethod != null)
-        {
-            var asyncAction = startMethod.Invoke(session, null);
-            if (asyncAction != null)
-            {
-                await WinRTAsyncHelper.AsTask(asyncAction);
-            }
-        }
+        await _recognizer.ContinuousRecognitionSession.StartAsync();
     }
 
-    private async Task StopContinuousRecognitionAsync()
+    private void OnResultGenerated(SpeechContinuousRecognitionSession sender,
+        SpeechContinuousRecognitionResultGeneratedEventArgs args)
     {
-        if (_recognizer == null) return;
-
-        var recognizerType = _recognizer.GetType();
-        var sessionProperty = recognizerType.GetProperty("ContinuousRecognitionSession");
-        var session = sessionProperty?.GetValue(_recognizer);
-
-        if (session == null) return;
-
-        var stopMethod = session.GetType().GetMethod("StopAsync");
-        if (stopMethod != null)
-        {
-            var asyncAction = stopMethod.Invoke(session, null);
-            if (asyncAction != null)
-            {
-                await WinRTAsyncHelper.AsTask(asyncAction);
-            }
-        }
+        var text = args.Result.Text;
+        AppendRecognizedText(text);
     }
 
-    private void WireUpResultGeneratedEvent(object session)
+    private void OnSessionCompleted(SpeechContinuousRecognitionSession sender,
+        SpeechContinuousRecognitionCompletedEventArgs args)
     {
-        var eventInfo = session.GetType().GetEvent("ResultGenerated");
-        if (eventInfo == null) return;
-
-        var handlerType = eventInfo.EventHandlerType;
-        if (handlerType == null) return;
-
-        // Create delegate using reflection
-        var methodInfo = GetType().GetMethod(nameof(OnResultGenerated),
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-        if (methodInfo == null) return;
-
-        var handler = Delegate.CreateDelegate(handlerType, this, methodInfo);
-        eventInfo.AddEventHandler(session, handler);
-    }
-
-    private void WireUpCompletedEvent(object session)
-    {
-        var eventInfo = session.GetType().GetEvent("Completed");
-        if (eventInfo == null) return;
-
-        var handlerType = eventInfo.EventHandlerType;
-        if (handlerType == null) return;
-
-        var methodInfo = GetType().GetMethod(nameof(OnSessionCompleted),
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-        if (methodInfo == null) return;
-
-        var handler = Delegate.CreateDelegate(handlerType, this, methodInfo);
-        eventInfo.AddEventHandler(session, handler);
-    }
-
-    private void OnResultGenerated(object? sender, dynamic e)
-    {
-        try
-        {
-            var result = e.Result;
-            var text = (string)result.Text;
-            AppendRecognizedText(text);
-        }
-        catch
-        {
-            // Ignore parsing errors in event handler
-        }
-    }
-
-    private void OnSessionCompleted(object? sender, dynamic e)
-    {
-        // Session completed (e.g., silence timeout)
         _isRecording = false;
     }
 
@@ -265,13 +142,14 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
         {
             try
             {
-                StopContinuousRecognitionAsync().Wait();
+                _recognizer?.ContinuousRecognitionSession.StopAsync().AsTask().Wait();
             }
             catch
             {
                 // Best effort cleanup
             }
         }
+        _recognizer?.Dispose();
         _recognizer = null;
     }
 }
