@@ -182,7 +182,22 @@ public partial class App : Application
             {
                 LogError("ToggleDictationAsync failed", ex);
                 _trayIconManager?.SetState(Tray.TrayState.Error, ex.Message);
-                _toastNotification?.ShowError($"Failed to start speech: {ex.Message}");
+
+                if (ex.Message.Contains("privacy", StringComparison.OrdinalIgnoreCase))
+                {
+                    var result = MessageBox.Show(
+                        "Speech recognition requires you to accept the Windows speech privacy policy.\n\n" +
+                        "Open Settings → Privacy & security → Speech now?",
+                        "VoiceClip", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        Process.Start(new ProcessStartInfo("ms-settings:privacy-speech") { UseShellExecute = true });
+                    }
+                }
+                else
+                {
+                    _toastNotification?.ShowError($"Failed to start speech: {ex.Message}");
+                }
             }
         }
     }
