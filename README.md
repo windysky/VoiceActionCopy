@@ -32,10 +32,17 @@ dotnet test VoiceClip.sln
 ## Publish Single File
 
 ```bash
-dotnet publish src/VoiceClip -c Release
+dotnet publish src/VoiceClip -c Release -r win-x64 --self-contained -o publish
 ```
 
-Output is a self-contained single executable (~30MB).
+## Icon Generation
+
+Tray icons are generated programmatically (no manual asset editing needed):
+
+```bash
+cd tools
+dotnet run --project IconGen.csproj -- ../src/VoiceClip/Assets
+```
 
 ## Configuration
 

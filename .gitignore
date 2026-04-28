@@ -10,7 +10,9 @@
 # .NET Build Artifacts
 # ===========================================
 obj/
+bin/
 *.user
+publish/
 
 # ===========================================
 # Go Build Artifacts

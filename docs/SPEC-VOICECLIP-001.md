@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **SPEC ID** | SPEC-VOICECLIP-001 |
-| **Status** | Draft |
+| **Status** | Implemented |
 | **Priority** | High |
 | **Author** | windysky |
 | **Created** | 2026-04-27 |
