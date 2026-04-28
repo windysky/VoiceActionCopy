@@ -45,7 +45,16 @@ Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#AppExeName}"; Description: "Launch {#AppName}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExeName}"; Description: "Launch {#AppName}"; Flags: nowait postinstall skipifsilent; Check: SpeechPrivacyAccepted
+Filename: "ms-settings:privacy-speech"; Description: "Open Speech settings (required for dictation)"; Flags: postinstall shellexec skipifsilent nowait; Check: not SpeechPrivacyAccepted
+
+[Code]
+function SpeechPrivacyAccepted: Boolean;
+var
+  Value: Cardinal;
+begin
+  Result := RegQueryDWordValue(HKCU, 'Software\Microsoft\Speech_OneCore\Settings\OnlineSpeechPrivacy', 'HasAccepted', Value) and (Value = 1);
+end;
 
 [Registry]
 ; Run on startup (optional task)
