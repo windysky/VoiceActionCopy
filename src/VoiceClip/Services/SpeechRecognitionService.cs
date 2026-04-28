@@ -1,4 +1,5 @@
 using System.Text;
+using VoiceClip.Helpers;
 using Windows.Media.SpeechRecognition;
 
 namespace VoiceClip.Services;
@@ -154,12 +155,17 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
         {
             try
             {
-                _recognizer?.ContinuousRecognitionSession.StopAsync().AsTask().Wait();
+                var stopTask = _recognizer?.ContinuousRecognitionSession.StopAsync();
+                if (stopTask != null)
+                {
+                    WinRTAsyncHelper.AsTask(stopTask).Wait();
+                }
             }
             catch
             {
                 // Best effort cleanup
             }
+            _isRecording = false;
         }
         _recognizer?.Dispose();
         _recognizer = null;
