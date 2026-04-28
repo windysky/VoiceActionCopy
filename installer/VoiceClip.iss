@@ -37,8 +37,7 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription
 Name: "startup"; Description: "Run on Windows &startup"; GroupDescription: "Startup:"; Flags: unchecked
 
 [Files]
-Source: "..\publish\VoiceClip.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\publish\Assets\*"; DestDir: "{app}\Assets"; Flags: ignoreversion recursesubdirs
+Source: "..\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"

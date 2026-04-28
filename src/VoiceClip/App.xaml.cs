@@ -220,6 +220,10 @@ public partial class App : Application
                     _toastNotification?.ShowError("Could not copy to clipboard — access denied");
                 }
             }
+            else if (e.DurationSeconds > 3)
+            {
+                _toastNotification?.ShowError("No speech detected. Check microphone and privacy settings.");
+            }
         });
     }
 

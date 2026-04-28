@@ -116,6 +116,7 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
             _recognizer.ContinuousRecognitionSession.Completed += OnSessionCompleted;
 
             _recognizer.Timeouts.EndSilenceTimeout = TimeSpan.FromSeconds(_silenceTimeoutSeconds);
+            _recognizer.Timeouts.InitialSilenceTimeout = TimeSpan.FromSeconds(_silenceTimeoutSeconds);
 
             _recognizer.Constraints.Add(
                 new SpeechRecognitionTopicConstraint(SpeechRecognitionScenario.Dictation, "dictation"));
