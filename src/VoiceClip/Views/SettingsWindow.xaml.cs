@@ -29,7 +29,11 @@ public partial class SettingsWindow : Window
         if (_settings.RunOnStartup)
         {
             var exePath = Environment.ProcessPath;
-            _startupService.SetStartup(true, exePath);
+            if (!_startupService.SetStartup(true, exePath))
+            {
+                MessageBox.Show("Could not enable startup. Run VoiceClip as administrator once to set up.",
+                    "VoiceClip", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
         else
         {

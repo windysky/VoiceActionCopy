@@ -52,6 +52,16 @@ public partial class HistoryPopup : Window
         Close();
     }
 
+    private void ClearAllButton_Click(object sender, RoutedEventArgs e)
+    {
+        var result = MessageBox.Show("Delete all dictation history?", "VoiceClip",
+            MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (result == MessageBoxResult.Yes)
+        {
+            _viewModel.ClearAllCommand.Execute(null);
+        }
+    }
+
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
         Close();

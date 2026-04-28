@@ -110,7 +110,7 @@
                         CommandParameter="{Binding SelectedEntry}"/>
                 <Button Content="Clear All"
                         Padding="12,6"
-                        Command="{Binding ClearAllCommand}"/>
+                        Click="ClearAllButton_Click"/>
             </StackPanel>
         </Grid>
     </Border>

@@ -37,7 +37,7 @@ public class DictationEntry
 
             return Text.Length <= 80
                 ? Text
-                : Text[..80];
+                : Text[..77] + "...";
         }
     }
 }

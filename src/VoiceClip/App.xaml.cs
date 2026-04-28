@@ -166,18 +166,7 @@ public partial class App : Application
 
         if (_speechService.IsRecording)
         {
-            var text = await _speechService.StopDictationAsync();
-            _trayIconManager?.SetState(Tray.TrayState.Idle);
-            _partialResultsIndicator?.Close();
-            _partialResultsIndicator = null;
-
-            if (!string.IsNullOrWhiteSpace(text))
-            {
-                var duration = (DateTime.UtcNow - _recordingStartTime).TotalSeconds;
-                _historyService?.Add(text, duration);
-                _clipboardService?.SetText(text);
-                _toastNotification?.Show("Copied to clipboard");
-            }
+            await _speechService.StopDictationAsync();
         }
         else
         {
@@ -208,7 +197,19 @@ public partial class App : Application
 
     private void OnDictationCompleted(object? sender, DictationResultEventArgs e)
     {
-        // Handled in ToggleDictationAsync via stop
+        Dispatcher.Invoke(() =>
+        {
+            _trayIconManager?.SetState(Tray.TrayState.Idle);
+            _partialResultsIndicator?.Close();
+            _partialResultsIndicator = null;
+
+            if (!string.IsNullOrWhiteSpace(e.Text))
+            {
+                _historyService?.Add(e.Text, e.DurationSeconds);
+                _clipboardService?.SetText(e.Text);
+                _toastNotification?.Show("Copied to clipboard");
+            }
+        });
     }
 
     private void ShowHistoryPopup()

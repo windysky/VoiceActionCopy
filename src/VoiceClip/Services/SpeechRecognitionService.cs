@@ -146,7 +146,17 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
     private void OnSessionCompleted(SpeechContinuousRecognitionSession sender,
         SpeechContinuousRecognitionCompletedEventArgs args)
     {
+        if (!_isRecording) return;
+
         _isRecording = false;
+        var text = _recognizedText.ToString();
+        var duration = (DateTime.UtcNow - _recordingStartTime).TotalSeconds;
+
+        DictationCompleted?.Invoke(this, new DictationResultEventArgs
+        {
+            Text = text,
+            DurationSeconds = duration
+        });
     }
 
     public void Dispose()

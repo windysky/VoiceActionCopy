@@ -49,7 +49,7 @@ public class DictationEntryTests
 
         // Assert
         preview.Should().HaveLength(80);
-        preview.Should().Be(new string('a', 80));
+        preview.Should().Be(new string('a', 77) + "...");
     }
 
     [Fact]
