@@ -187,6 +187,8 @@ public partial class App : Application
             {
                 LogError("ToggleDictationAsync failed", ex);
                 _trayIconManager?.SetState(Tray.TrayState.Error, ex.Message);
+                _partialResultsIndicator?.Close();
+                _partialResultsIndicator = null;
 
                 if (ex.Message.Contains("privacy", StringComparison.OrdinalIgnoreCase))
                 {
@@ -314,6 +316,8 @@ public partial class App : Application
         base.OnExit(e);
     }
 
+    private static readonly long MaxErrorLogSize = 5 * 1024 * 1024; // 5 MB
+
     private static void LogError(string context, Exception ex)
     {
         try
@@ -322,7 +326,26 @@ public partial class App : Application
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                 "VoiceClip", "error.log");
             var message = $"[{DateTime.UtcNow:O}] {context}: {ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}\n\n";
-            File.AppendAllText(logPath, message);
+
+            if (File.Exists(logPath))
+            {
+                try
+                {
+                    var size = new FileInfo(logPath).Length;
+                    if (size > MaxErrorLogSize)
+                        File.WriteAllText(logPath, message);
+                    else
+                        File.AppendAllText(logPath, message);
+                }
+                catch
+                {
+                    File.AppendAllText(logPath, message);
+                }
+            }
+            else
+            {
+                File.AppendAllText(logPath, message);
+            }
         }
         catch { }
     }

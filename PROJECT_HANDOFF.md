@@ -54,6 +54,9 @@ None. All core functionality working. All code review issues resolved.
 | FIX-VC-002 | Critical | Recognizer not reusable after session completion — next start silently fails | Resolved |
 | FIX-VC-003 | Critical | Double DictationCompleted event — double clipboard copy and history entry | Resolved |
 | FIX-VC-004 | Low | ToastNotification.Show() durationMs parameter silently ignored | Resolved |
+| FIX-VC-005 | High | IsAvailableAsync() leaks SpeechRecognizer — never disposed after check | Resolved |
+| FIX-VC-006 | High | error.log grows unbounded — no size cap | Resolved |
+| FIX-VC-007 | Low | PartialResultsIndicator stays open on recording start failure | Resolved |
 
 ## 5. Risks and Known Limitations
 

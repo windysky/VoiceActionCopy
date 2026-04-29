@@ -90,10 +90,14 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
         try
         {
             await InitializeRecognizerAsync();
-            return _recognizer != null;
+            var available = _recognizer != null;
+            // Don't leave the recognizer alive between sessions
+            CleanupRecognizer();
+            return available;
         }
         catch
         {
+            CleanupRecognizer();
             return false;
         }
     }

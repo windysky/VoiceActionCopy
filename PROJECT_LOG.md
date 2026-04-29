@@ -1,5 +1,23 @@
 # PROJECT_LOG.md — VoiceClip Session History
 
+## Session 10: 2026-04-28 — Code Review Session 7
+
+- Coding CLI used: Claude Code CLI
+- Phase(s) worked on: Code review, bug fixes
+- Concrete changes implemented:
+  - Fixed IsAvailableAsync() leaking SpeechRecognizer (now cleans up after check)
+  - Capped error.log at 5MB (rotates on overflow)
+  - Fixed PartialResultsIndicator staying open on recording start failure
+- SPECs: FIX-VC-005 (high), FIX-VC-006 (high), FIX-VC-007 (low)
+- Files modified:
+  - `src/VoiceClip/Services/SpeechRecognitionService.cs` — IsAvailableAsync cleanup
+  - `src/VoiceClip/App.xaml.cs` — Error log rotation, indicator close on failure
+  - `PROJECT_HANDOFF.md` — Updated issue list
+  - `PROJECT_LOG.md` — This entry
+- Verification: `dotnet build` (0/0), `dotnet test` (57/57)
+
+---
+
 ## Session 9: 2026-04-28 — Code Review Session 6
 
 - Coding CLI used: Claude Code CLI
