@@ -17,8 +17,7 @@ public class ToastNotification
     /// </summary>
     /// <param name="message">Message to display.</param>
     /// <param name="title">Optional title (defaults to "VoiceClip").</param>
-    /// <param name="durationMs">Duration in milliseconds (defaults to 2000).</param>
-    public void Show(string message, string title = "VoiceClip", int durationMs = 2000)
+    public void Show(string message, string title = "VoiceClip")
     {
         if (_notifyIcon == null) return;
 

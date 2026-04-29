@@ -1,4 +1,3 @@
-using System.IO;
 using System.Text;
 using VoiceClip.Helpers;
 using Windows.Media.SpeechRecognition;
@@ -11,6 +10,7 @@ namespace VoiceClip.Services;
 public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
 {
     private volatile bool _isRecording;
+    private bool _stopRequested;
     private DateTime _recordingStartTime;
     private readonly string _language;
     private readonly int _silenceTimeoutSeconds;
@@ -22,7 +22,7 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
     public event EventHandler<PartialResultEventArgs>? PartialResultReceived;
     public event EventHandler<DictationResultEventArgs>? DictationCompleted;
 
-    public SpeechRecognitionService(string language = "en-US", int silenceTimeoutSeconds = 60)
+    public SpeechRecognitionService(string language = "en-US", int silenceTimeoutSeconds = 8)
     {
         _language = language;
         _silenceTimeoutSeconds = silenceTimeoutSeconds;
@@ -33,8 +33,10 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
     {
         if (_isRecording) return;
 
+        CleanupRecognizer();
         _recognizedText.Clear();
         _recordingStartTime = DateTime.UtcNow;
+        _stopRequested = false;
         _isRecording = true;
 
         try
@@ -45,6 +47,7 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
         catch (Exception ex)
         {
             _isRecording = false;
+            CleanupRecognizer();
             throw new InvalidOperationException("Failed to start speech recognition: " + ex.Message, ex);
         }
     }
@@ -54,6 +57,7 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
     {
         if (!_isRecording) return string.Empty;
 
+        _stopRequested = true;
         _isRecording = false;
         var duration = (DateTime.UtcNow - _recordingStartTime).TotalSeconds;
         var text = _recognizedText.ToString();
@@ -76,6 +80,7 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
             DurationSeconds = duration
         });
 
+        CleanupRecognizer();
         return text;
     }
 
@@ -127,7 +132,6 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
     {
         if (_recognizer != null)
         {
-            LogDebug("InitializeRecognizerAsync: already initialized, skipping");
             return;
         }
 
@@ -135,7 +139,6 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
         {
             var language = new Windows.Globalization.Language(_language);
             _recognizer = new SpeechRecognizer(language);
-            LogDebug($"InitializeRecognizerAsync: created with language={_language}, systemSpeechLang={SpeechRecognizer.SystemSpeechLanguage?.LanguageTag}");
 
             _recognizer.ContinuousRecognitionSession.ResultGenerated += OnResultGenerated;
             _recognizer.ContinuousRecognitionSession.Completed += OnSessionCompleted;
@@ -146,8 +149,7 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
             _recognizer.Constraints.Add(
                 new SpeechRecognitionTopicConstraint(SpeechRecognitionScenario.Dictation, "dictation"));
 
-            var compileResult = await _recognizer.CompileConstraintsAsync();
-            LogDebug($"CompileConstraintsAsync: status={compileResult.Status}");
+            await _recognizer.CompileConstraintsAsync();
         }
         catch
         {
@@ -161,22 +163,19 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
     {
         if (_recognizer == null) return;
         await _recognizer.ContinuousRecognitionSession.StartAsync();
-        LogDebug("StartContinuousRecognitionAsync: session started");
     }
 
     private void OnResultGenerated(SpeechContinuousRecognitionSession sender,
         SpeechContinuousRecognitionResultGeneratedEventArgs args)
     {
-        var text = args.Result.Text;
-        LogDebug($"OnResultGenerated: text='{text}', confidence={args.Result.Confidence}");
-        AppendRecognizedText(text);
+        AppendRecognizedText(args.Result.Text);
     }
 
     private void OnSessionCompleted(SpeechContinuousRecognitionSession sender,
         SpeechContinuousRecognitionCompletedEventArgs args)
     {
-        LogDebug($"OnSessionCompleted: status={args.Status}, _isRecording={_isRecording}");
-        if (!_isRecording) return;
+        // If StopDictationAsync already handled completion, skip
+        if (_stopRequested || !_isRecording) return;
 
         _isRecording = false;
         var text = _recognizedText.ToString();
@@ -187,6 +186,19 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
             Text = text,
             DurationSeconds = duration
         });
+
+        CleanupRecognizer();
+    }
+
+    private void CleanupRecognizer()
+    {
+        if (_recognizer != null)
+        {
+            _recognizer.ContinuousRecognitionSession.ResultGenerated -= OnResultGenerated;
+            _recognizer.ContinuousRecognitionSession.Completed -= OnSessionCompleted;
+            _recognizer.Dispose();
+            _recognizer = null;
+        }
     }
 
     public void Dispose()
@@ -208,19 +220,6 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
             }
             _isRecording = false;
         }
-        _recognizer?.Dispose();
-        _recognizer = null;
-    }
-
-    private static void LogDebug(string message)
-    {
-        try
-        {
-            var logPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "VoiceClip", "debug.log");
-            File.AppendAllText(logPath, $"[{DateTime.UtcNow:O}] {message}\n");
-        }
-        catch { }
+        CleanupRecognizer();
     }
 }

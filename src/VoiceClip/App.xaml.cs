@@ -118,7 +118,7 @@ public partial class App : Application
         CheckSpeechAvailabilityAsync();
 
         // Show startup notification
-        _toastNotification?.Show("Ready — Ctrl+Alt+D to dictate, Ctrl+Alt+V for history", "VoiceClip", 4000);
+        _toastNotification?.Show("Ready — Ctrl+Alt+D to dictate, Ctrl+Alt+V for history", "VoiceClip");
     }
 
     private async void CheckSpeechAvailabilityAsync()

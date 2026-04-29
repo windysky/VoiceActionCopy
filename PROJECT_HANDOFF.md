@@ -44,7 +44,16 @@ VoiceClip is a Windows 11 system tray app that captures voice dictation into a p
 
 ## 4. Outstanding Work
 
-None. All core functionality working.
+None. All core functionality working. All code review issues resolved.
+
+## 4.1 Code Review Session 6 Fixes (2026-04-28)
+
+| SPEC | Severity | Issue | Status |
+|------|----------|-------|--------|
+| FIX-VC-001 | Medium | Debug logging (LogDebug) left in production SpeechRecognitionService | Resolved |
+| FIX-VC-002 | Critical | Recognizer not reusable after session completion — next start silently fails | Resolved |
+| FIX-VC-003 | Critical | Double DictationCompleted event — double clipboard copy and history entry | Resolved |
+| FIX-VC-004 | Low | ToastNotification.Show() durationMs parameter silently ignored | Resolved |
 
 ## 5. Risks and Known Limitations
 
@@ -53,7 +62,7 @@ None. All core functionality working.
 | WPF trimming disabled (187MB exe) | Accepted | Trimmed exe crashes at runtime; untrimmed is reliable |
 | Language/silence timeout changes require restart | By design | Settings shows restart notification |
 | Speech requires Windows Online Speech Recognition enabled | By design | Installer guides user to settings page |
-| Debug logging enabled in SpeechRecognitionService | Cleanup needed | `debug.log` written to `%APPDATA%\VoiceClip\` on each session |
+| Debug logging enabled in SpeechRecognitionService | Resolved | Removed in code review session 6 |
 
 ## 6. Verification Status
 
@@ -72,10 +81,9 @@ None. All core functionality working.
 
 The project is feature-complete. For the next session:
 
-1. Remove debug logging from `SpeechRecognitionService.cs` (the `LogDebug` calls)
-2. Remove `%APPDATA%\VoiceClip\debug.log` from target machines
-3. Rebuild installer if any changes are made
-4. `git push` to sync to origin
+1. Remove `%APPDATA%\VoiceClip\debug.log` from target machines (debug logging removed from code)
+2. Rebuild installer if any changes are made
+3. `git push` to sync to origin
 
 ## 8. Tech Stack
 

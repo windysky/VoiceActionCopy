@@ -1,5 +1,26 @@
 # PROJECT_LOG.md — VoiceClip Session History
 
+## Session 9: 2026-04-28 — Code Review Session 6
+
+- Coding CLI used: Claude Code CLI
+- Phase(s) worked on: Code review, bug fixes
+- Concrete changes implemented:
+  - Removed debug logging from SpeechRecognitionService (LogDebug method + all calls)
+  - Fixed recognizer not reusable after session completion (CleanupRecognizer resets state)
+  - Fixed double DictationCompleted event (added _stopRequested guard + unsubscribing handlers)
+  - Removed unused durationMs parameter from ToastNotification.Show()
+  - Updated default silence timeout parameter in SpeechRecognitionService constructor (60→8)
+- SPECs: FIX-VC-001 (medium), FIX-VC-002 (critical), FIX-VC-003 (critical), FIX-VC-004 (low)
+- Files modified:
+  - `src/VoiceClip/Services/SpeechRecognitionService.cs` — Debug logging removal, reusability fix, double-event fix
+  - `src/VoiceClip/Helpers/ToastNotification.cs` — Removed unused durationMs parameter
+  - `src/VoiceClip/App.xaml.cs` — Updated toast caller, startup notification parameter
+  - `PROJECT_HANDOFF.md` — Updated issue status, restart instructions
+  - `PROJECT_LOG.md` — This entry
+- Verification: `dotnet build` (0/0), `dotnet test` (57/57)
+
+---
+
 ## Session 8: 2026-04-28 — UX Improvements + Runtime Verification
 
 - Coding CLI used: Claude Code CLI + external agent
