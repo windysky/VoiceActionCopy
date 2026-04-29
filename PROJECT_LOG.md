@@ -1,6 +1,21 @@
 # PROJECT_LOG.md — VoiceClip Session History
 
-## Session 10: 2026-04-28 — Code Review Session 7
+## Session 11: 2026-04-28 — Code Review Session 8
+
+- Coding CLI used: Claude Code CLI
+- Phase(s) worked on: Full code review (third consecutive pass)
+- Issues found: 0
+- Analysis performed:
+  - Re-read all 20+ source files at current HEAD (1c73d8e)
+  - Thread safety: verified `_stopRequested`/`_isRecording` guards, `CleanupRecognizer` concurrency paths
+  - Security: no secrets, no injection vectors, file I/O scoped to %APPDATA%, registry scoped to HKCU\Run
+  - File I/O: atomic save via File.Replace with temp files, orphaned tmp files self-heal on next write
+  - Edge cases: multiple history popups (low, accepted), toast null-conditional inconsistency (style only)
+  - By-design items: settings require restart (documented + user notification)
+- Baseline: build 0/0, tests 57/57
+- Conclusion: No actionable issues found. Codebase is clean after 7 prior SPEC fixes.
+
+---
 
 - Coding CLI used: Claude Code CLI
 - Phase(s) worked on: Code review, bug fixes
