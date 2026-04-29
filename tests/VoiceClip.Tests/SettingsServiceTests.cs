@@ -32,7 +32,7 @@ public class SettingsServiceTests : IDisposable
         // Assert
         settings.Should().NotBeNull();
         settings.Language.Should().Be("en-US");
-        settings.SilenceTimeoutSeconds.Should().Be(60);
+        settings.SilenceTimeoutSeconds.Should().Be(8);
         settings.MaxHistoryEntries.Should().Be(500);
     }
 
@@ -43,7 +43,7 @@ public class SettingsServiceTests : IDisposable
         var settings = new AppSettings
         {
             Language = "ko-KR",
-            SilenceTimeoutSeconds = 120,
+            SilenceTimeoutSeconds = 30,
             MaxHistoryEntries = 1000,
             RunOnStartup = true
         };
@@ -54,7 +54,7 @@ public class SettingsServiceTests : IDisposable
 
         // Assert
         loaded.Language.Should().Be("ko-KR");
-        loaded.SilenceTimeoutSeconds.Should().Be(120);
+        loaded.SilenceTimeoutSeconds.Should().Be(30);
         loaded.MaxHistoryEntries.Should().Be(1000);
         loaded.RunOnStartup.Should().BeTrue();
     }

@@ -44,9 +44,9 @@
         <!-- Silence Timeout -->
         <TextBlock Grid.Row="1" Grid.Column="0" Text="Silence timeout (sec):" VerticalAlignment="Center" Margin="0,0,0,12"/>
         <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,12">
-            <Slider Width="180" Minimum="10" Maximum="300"
+            <Slider Width="180" Minimum="3" Maximum="60"
                     Value="{Binding SilenceTimeoutSeconds}"
-                    TickFrequency="10" IsSnapToTickEnabled="True"
+                    TickFrequency="1" IsSnapToTickEnabled="True"
                     VerticalAlignment="Center"/>
             <TextBlock Text="{Binding SilenceTimeoutSeconds}" Width="40"
                        VerticalAlignment="Center" Margin="8,0,0,0"/>

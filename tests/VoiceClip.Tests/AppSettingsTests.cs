@@ -14,7 +14,7 @@ public class AppSettingsTests
 
         // Assert
         settings.Language.Should().Be("en-US");
-        settings.SilenceTimeoutSeconds.Should().Be(60);
+        settings.SilenceTimeoutSeconds.Should().Be(8);
         settings.MaxHistoryEntries.Should().Be(500);
         settings.RunOnStartup.Should().BeFalse();
         settings.DictateHotkey.Should().Be("Ctrl+Alt+D");
@@ -28,10 +28,10 @@ public class AppSettingsTests
         var settings = new AppSettings();
 
         // Act
-        settings.SilenceTimeoutSeconds = 120;
+        settings.SilenceTimeoutSeconds = 30;
 
         // Assert
-        settings.SilenceTimeoutSeconds.Should().Be(120);
+        settings.SilenceTimeoutSeconds.Should().Be(30);
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public class AppSettingsTests
         var settings = new AppSettings
         {
             Language = "de-DE",
-            SilenceTimeoutSeconds = 90,
+            SilenceTimeoutSeconds = 30,
             MaxHistoryEntries = 750,
             RunOnStartup = true
         };
@@ -90,7 +90,7 @@ public class AppSettingsTests
         copy.CopyFrom(clone);
 
         copy.Language.Should().Be("de-DE");
-        copy.SilenceTimeoutSeconds.Should().Be(90);
+        copy.SilenceTimeoutSeconds.Should().Be(30);
         copy.MaxHistoryEntries.Should().Be(750);
         copy.RunOnStartup.Should().BeTrue();
     }

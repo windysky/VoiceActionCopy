@@ -8,7 +8,7 @@ namespace VoiceClip.Models;
 public class AppSettings : INotifyPropertyChanged
 {
     private string _language = "en-US";
-    private int _silenceTimeoutSeconds = 60;
+    private int _silenceTimeoutSeconds = 8;
     private int _maxHistoryEntries = 500;
     private bool _runOnStartup;
     private string _dictateHotkey = "Ctrl+Alt+D";
@@ -25,7 +25,7 @@ public class AppSettings : INotifyPropertyChanged
     public int SilenceTimeoutSeconds
     {
         get => _silenceTimeoutSeconds;
-        set { _silenceTimeoutSeconds = Math.Clamp(value, 10, 300); PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SilenceTimeoutSeconds))); }
+        set { _silenceTimeoutSeconds = Math.Clamp(value, 3, 60); PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SilenceTimeoutSeconds))); }
     }
 
     public int MaxHistoryEntries
