@@ -56,7 +56,7 @@ public class TrayIconManager : IDisposable
         if (_clickWaiting)
         {
             // Second click within the double-click window → double-click
-            _clickTimer.Stop();
+            _clickTimer?.Stop();
             _clickWaiting = false;
             DictateClicked?.Invoke(this, EventArgs.Empty);
         }
@@ -64,13 +64,13 @@ public class TrayIconManager : IDisposable
         {
             // First click — start timer, fire HistoryClicked if no second click arrives
             _clickWaiting = true;
-            _clickTimer.Start();
+            _clickTimer?.Start();
         }
     }
 
     private void OnClickTimerTick(object? sender, EventArgs e)
     {
-        _clickTimer.Stop();
+        _clickTimer?.Stop();
         _clickWaiting = false;
         HistoryClicked?.Invoke(this, EventArgs.Empty);
     }
