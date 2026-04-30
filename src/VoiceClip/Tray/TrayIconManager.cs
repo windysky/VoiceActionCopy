@@ -11,6 +11,8 @@ public class TrayIconManager : IDisposable
 {
     private readonly Hardcodet.Wpf.TaskbarNotification.TaskbarIcon? _notifyIcon;
     private bool _disposed;
+    private System.Windows.Threading.DispatcherTimer? _clickTimer;
+    private bool _clickWaiting;
 
     public event EventHandler? DictateClicked;
     public event EventHandler? HistoryClicked;
@@ -23,27 +25,54 @@ public class TrayIconManager : IDisposable
         {
             _notifyIcon = new Hardcodet.Wpf.TaskbarNotification.TaskbarIcon();
 
-            // Try to load custom icon, fall back to system icon
             var icon = LoadIcon();
-            if (icon != null)
-            {
-                _notifyIcon.Icon = icon;
-            }
-            else
-            {
-                // Use system microphone icon as fallback
-                _notifyIcon.Icon = SystemIcons.Information;
-            }
+            _notifyIcon.Icon = icon ?? SystemIcons.Information;
 
-            _notifyIcon.ContextMenu = CreateContextMenu();
             _notifyIcon.ToolTipText = "VoiceClip - Ready";
 
-            _notifyIcon.TrayMouseDoubleClick += (s, e) => HistoryClicked?.Invoke(this, EventArgs.Empty);
+            _clickTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(300)
+            };
+            _clickTimer.Tick += OnClickTimerTick;
+
+            _notifyIcon.TrayLeftMouseUp += OnTrayLeftMouseUp;
+
+            _notifyIcon.TrayRightMouseUp += (s, e) =>
+            {
+                var menu = CreateContextMenu();
+                menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Mouse;
+                menu.IsOpen = true;
+            };
         }
         catch
         {
             // Non-critical - tray icon creation may fail in non-GUI contexts
         }
+    }
+
+    private void OnTrayLeftMouseUp(object? s, EventArgs e)
+    {
+        if (_clickWaiting)
+        {
+            // Second click within the double-click window → double-click
+            _clickTimer.Stop();
+            _clickWaiting = false;
+            DictateClicked?.Invoke(this, EventArgs.Empty);
+        }
+        else
+        {
+            // First click — start timer, fire HistoryClicked if no second click arrives
+            _clickWaiting = true;
+            _clickTimer.Start();
+        }
+    }
+
+    private void OnClickTimerTick(object? sender, EventArgs e)
+    {
+        _clickTimer.Stop();
+        _clickWaiting = false;
+        HistoryClicked?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>

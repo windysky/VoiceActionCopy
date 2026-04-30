@@ -85,16 +85,16 @@
                                        TextTrimming="CharacterEllipsis"
                                        FontSize="13" Foreground="#333333"/>
                             <TextBlock Grid.Row="1" Grid.Column="0"
-                                       Text="{Binding Timestamp, StringFormat='{}{0:g}'}"
-                                       FontSize="11" Foreground="#999999"/>
-                            <TextBlock Grid.Row="1" Grid.Column="1"
-                                       Text="{Binding DurationSeconds, StringFormat='{}{0:F1}s'}"
-                                       FontSize="11" Foreground="#999999"/>
-                            <Button Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"
+                                       FontSize="11" Foreground="#999999">
+                                <Run Text="{Binding Timestamp, StringFormat='{}{0:g}'}"/>
+                                <Run Text="  "/>
+                                <Run Text="{Binding DurationSeconds, StringFormat='{}{0:F1}s'}"/>
+                            </TextBlock>
+                            <Button Grid.Row="0" Grid.Column="1"
                                     Content="Delete"
                                     Padding="8,4"
                                     Margin="8,0,0,0"
-                                    VerticalAlignment="Center"
+                                    FontSize="11"
                                     Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                     CommandParameter="{Binding}"/>
                         </Grid>
@@ -105,6 +105,26 @@
                                 CommandParameter="{Binding SelectedEntry}"/>
                 </ListBox.InputBindings>
             </ListBox>
+
+            <!-- Empty State Message -->
+            <TextBlock Grid.Row="2"
+                       Text="No dictation history yet.&#x0a;Use Ctrl+Alt+D or the mic button to dictate."
+                       TextAlignment="Center"
+                       Foreground="#AAAAAA"
+                       FontSize="13"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Entries.Count}" Value="0">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
 
             <!-- Bottom Bar -->
             <StackPanel Grid.Row="3" Orientation="Horizontal"
