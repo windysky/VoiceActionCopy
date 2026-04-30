@@ -13,6 +13,7 @@ public class AppSettings : INotifyPropertyChanged
     private bool _runOnStartup;
     private string _dictateHotkey = "Ctrl+Alt+D";
     private string _historyHotkey = "Ctrl+Alt+V";
+    private string? _microphoneDeviceId = null;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -52,6 +53,12 @@ public class AppSettings : INotifyPropertyChanged
         set { _historyHotkey = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HistoryHotkey))); }
     }
 
+    public string? MicrophoneDeviceId
+    {
+        get => _microphoneDeviceId;
+        set { _microphoneDeviceId = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MicrophoneDeviceId))); }
+    }
+
     public AppSettings Clone()
     {
         return new AppSettings
@@ -61,7 +68,8 @@ public class AppSettings : INotifyPropertyChanged
             MaxHistoryEntries = MaxHistoryEntries,
             RunOnStartup = RunOnStartup,
             DictateHotkey = DictateHotkey,
-            HistoryHotkey = HistoryHotkey
+            HistoryHotkey = HistoryHotkey,
+            MicrophoneDeviceId = MicrophoneDeviceId
         };
     }
 
@@ -75,5 +83,6 @@ public class AppSettings : INotifyPropertyChanged
         RunOnStartup = other.RunOnStartup;
         DictateHotkey = other.DictateHotkey;
         HistoryHotkey = other.HistoryHotkey;
+        MicrophoneDeviceId = other.MicrophoneDeviceId;
     }
 }

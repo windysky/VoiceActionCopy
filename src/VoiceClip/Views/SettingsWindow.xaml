@@ -5,13 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="VoiceClip Settings"
-        Width="450" Height="400"
+        Width="450" Height="440"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         ShowInTaskbar="False">
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -76,8 +77,12 @@
                   IsChecked="{Binding RunOnStartup}"
                   Margin="0,0,0,12"/>
 
+        <!-- Microphone -->
+        <TextBlock Grid.Row="6" Grid.Column="0" Text="Microphone:" VerticalAlignment="Center" Margin="0,0,0,12"/>
+        <ComboBox Grid.Row="6" Grid.Column="1" x:Name="MicrophoneComboBox" Margin="0,0,0,12"/>
+
         <!-- Buttons -->
-        <StackPanel Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2"
+        <StackPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2"
                     Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Cancel" Padding="16,8" Margin="0,0,8,0"
                     Click="CancelButton_Click"/>

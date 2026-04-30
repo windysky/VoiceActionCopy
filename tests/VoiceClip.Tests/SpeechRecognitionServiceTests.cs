@@ -100,4 +100,12 @@ public class SpeechRecognitionServiceTests
         // Assert
         receivedArgs.Should().BeNull();
     }
+
+    [Fact]
+    public void PreferredDeviceId_CanBeSetAndRetrieved()
+    {
+        var service = new SpeechRecognitionService();
+        service.PreferredDeviceId = "test-device-id";
+        service.PreferredDeviceId.Should().Be("test-device-id");
+    }
 }

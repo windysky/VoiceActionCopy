@@ -20,6 +20,8 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
     // SpeechRecognizer.HypothesisGenerated (background thread, possibly different one).
     private readonly object _textLock = new();
     private SpeechRecognizer? _recognizer;
+    private string? _savedDefaultDeviceId;
+    public string? PreferredDeviceId { get; set; }
 
     public bool IsRecording => _isRecording;
 
@@ -45,6 +47,12 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
         _stopRequested = false;
         _isRecording = true;
 
+        if (!string.IsNullOrEmpty(PreferredDeviceId))
+        {
+            _savedDefaultDeviceId = AudioDeviceHelper.GetDefaultCommunicationDeviceId();
+            AudioDeviceHelper.SetDefaultCommunicationDevice(PreferredDeviceId);
+        }
+
         try
         {
             await InitializeRecognizerAsync();
@@ -53,6 +61,7 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
         catch (Exception ex)
         {
             _isRecording = false;
+            RestoreDefaultDevice();
             CleanupRecognizer();
             throw new InvalidOperationException("Failed to start speech recognition: " + ex.Message, ex);
         }
@@ -86,8 +95,18 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
             DurationSeconds = duration
         });
 
+        RestoreDefaultDevice();
         CleanupRecognizer();
         return text;
+    }
+
+    private void RestoreDefaultDevice()
+    {
+        if (_savedDefaultDeviceId != null)
+        {
+            AudioDeviceHelper.SetDefaultCommunicationDevice(_savedDefaultDeviceId);
+            _savedDefaultDeviceId = null;
+        }
     }
 
     /// <inheritdoc/>
@@ -254,6 +273,7 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
             args.Status != SpeechRecognitionResultStatus.UserCanceled)
         {
             RecognitionError?.Invoke(this, $"Speech recognition ended: {args.Status}");
+            RestoreDefaultDevice();
             CleanupRecognizer();
             return;
         }
@@ -267,6 +287,7 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
             DurationSeconds = duration
         });
 
+        RestoreDefaultDevice();
         CleanupRecognizer();
     }
 
@@ -301,6 +322,7 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
             }
             _isRecording = false;
         }
+        RestoreDefaultDevice();
         CleanupRecognizer();
     }
 }

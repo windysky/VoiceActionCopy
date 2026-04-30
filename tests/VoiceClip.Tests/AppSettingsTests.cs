@@ -94,4 +94,29 @@ public class AppSettingsTests
         copy.MaxHistoryEntries.Should().Be(750);
         copy.RunOnStartup.Should().BeTrue();
     }
+
+    [Fact]
+    public void MicrophoneDeviceId_DefaultsToNull()
+    {
+        var settings = new AppSettings();
+        settings.MicrophoneDeviceId.Should().BeNull();
+    }
+
+    [Fact]
+    public void MicrophoneDeviceId_CanBeSet()
+    {
+        var settings = new AppSettings();
+        settings.MicrophoneDeviceId = "test-device-id";
+        settings.MicrophoneDeviceId.Should().Be("test-device-id");
+    }
+
+    [Fact]
+    public void Clone_AndCopyFrom_IncludesMicrophoneDeviceId()
+    {
+        var settings = new AppSettings { MicrophoneDeviceId = "my-mic-device" };
+        var clone = settings.Clone();
+        var copy = new AppSettings();
+        copy.CopyFrom(clone);
+        copy.MicrophoneDeviceId.Should().Be("my-mic-device");
+    }
 }

@@ -1,4 +1,6 @@
 using System.Windows;
+using System.Windows.Controls;
+using VoiceClip.Helpers;
 using VoiceClip.Models;
 using VoiceClip.Services;
 
@@ -23,6 +25,33 @@ public partial class SettingsWindow : Window
         _editableSettings = settings.Clone();
         _editableSettings.RunOnStartup = _startupService.IsStartupEnabled();
         DataContext = _editableSettings;
+        Loaded += async (_, _) => await LoadMicDevicesAsync();
+    }
+
+    private async Task LoadMicDevicesAsync()
+    {
+        var defaultItem = new ComboBoxItem { Content = "(System Default)", Tag = (string?)null };
+        MicrophoneComboBox.Items.Add(defaultItem);
+
+        var devices = await AudioDeviceHelper.GetInputDevicesAsync();
+        foreach (var device in devices)
+            MicrophoneComboBox.Items.Add(new ComboBoxItem { Content = device.Name, Tag = device.Id });
+
+        SelectMicrophoneItem(_editableSettings.MicrophoneDeviceId);
+    }
+
+    private void SelectMicrophoneItem(string? deviceId)
+    {
+        foreach (ComboBoxItem item in MicrophoneComboBox.Items)
+        {
+            if ((string?)item.Tag == deviceId)
+            {
+                MicrophoneComboBox.SelectedItem = item;
+                return;
+            }
+        }
+        if (MicrophoneComboBox.Items.Count > 0)
+            MicrophoneComboBox.SelectedIndex = 0;
     }
 
     private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -31,6 +60,9 @@ public partial class SettingsWindow : Window
             _settings.Language != _editableSettings.Language ||
             _settings.SilenceTimeoutSeconds != _editableSettings.SilenceTimeoutSeconds ||
             _settings.MaxHistoryEntries != _editableSettings.MaxHistoryEntries;
+
+        if (MicrophoneComboBox.SelectedItem is ComboBoxItem micItem)
+            _editableSettings.MicrophoneDeviceId = (string?)micItem.Tag;
 
         _settings.CopyFrom(_editableSettings);
         _settingsService.Save(_settings);

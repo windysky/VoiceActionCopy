@@ -83,6 +83,7 @@ public partial class App : Application
         _historyService = new HistoryService(storageDir, _settings.MaxHistoryEntries);
         _clipboardService = new ClipboardService();
         _speechService = new SpeechRecognitionService(_settings.Language, _settings.SilenceTimeoutSeconds);
+        _speechService.PreferredDeviceId = _settings.MicrophoneDeviceId;
 
         // Initialize ViewModel
         _historyViewModel = new HistoryViewModel(_historyService, _clipboardService);
@@ -411,6 +412,8 @@ public partial class App : Application
             var settingsWindow = new SettingsWindow(_settingsService, _settings);
             settingsWindow.Owner = _mainWindow;
             settingsWindow.ShowDialog();
+            if (_speechService != null)
+                _speechService.PreferredDeviceId = _settings.MicrophoneDeviceId;
         });
     }
 
