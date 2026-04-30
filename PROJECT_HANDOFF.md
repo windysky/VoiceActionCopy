@@ -4,7 +4,7 @@
 
 VoiceClip is a Windows 11 system tray app that captures voice dictation into a persistent clipboard buffer using `Windows.Media.SpeechRecognition` (same engine as Voice Access). Independent of Voice Access — both can coexist.
 
-- Last updated: 2026-04-29 22:30 CDT
+- Last updated: 2026-04-29 Session 18 CDT
 - Last coding CLI used: Claude Code CLI (claude-sonnet-4-6)
 
 ## 2. Current State
@@ -14,7 +14,7 @@ VoiceClip is a Windows 11 system tray app that captures voice dictation into a p
 | Core app (tray, hotkeys, speech, history) | Completed | Working |
 | Spec compliance (REQ-VC-001 through REQ-VC-010) | Completed | |
 | Icon generation + generated icons | Completed | |
-| Self-contained publish (187MB, no trimming) | Completed | Trimming disabled — trimmed exe crashes |
+| Self-contained publish (173MB, no trimming) | Completed | Rebuilt Session 18; trimming disabled — trimmed exe crashes |
 | Inno Setup installer script | Completed | Speech privacy check, all files included |
 | Runtime dictation verified on target machine | Completed | Requires speech privacy acceptance |
 | Code review (7 passes, 17+ bugs fixed) | Completed | |
@@ -36,12 +36,13 @@ VoiceClip is a Windows 11 system tray app that captures voice dictation into a p
 | History Delete button layout fix | Completed 2026-04-29 22:30 CDT | Button row 0 only; timestamp+duration merged into one line |
 | History Run element crash fix | Completed 2026-04-29 22:30 CDT | VisualTreeHelper.GetParent guarded for non-Visual elements |
 | "No speech detected" downgraded from error to info | Completed 2026-04-29 22:30 CDT | 1s info toast, no error log entry |
+| Mic device picker in Settings | Completed Session 18 | IPolicyConfig COM; AudioDeviceHelper; AppSettings.MicrophoneDeviceId |
 
-- **Build**: 0 errors, 0 warnings (verified 2026-04-30 CDT — post Session 17 HistoryPopup fix)
-- **Tests**: 57/57 passing (verified 2026-04-30 CDT)
-- **SPEC**: SPEC-VOICECLIP-001 — Status: Implemented
-- **Published exe**: 187MB (self-contained, no trimming) — needs rebuild after all session 15 changes
-- **Branch**: main
+- **Build**: 0 errors, 0 warnings (verified Session 18)
+- **Tests**: 63/63 passing (verified Session 18 — 6 new tests added for mic picker)
+- **SPEC**: SPEC-VOICECLIP-001 Implemented; SPEC-VC-MIC-PICKER-001 Completed
+- **Published exe**: 173MB (rebuilt Session 18, self-contained, no trimming)
+- **Branch**: main (git clean)
 
 ## 3. Execution Plan Status
 
@@ -56,37 +57,39 @@ VoiceClip is a Windows 11 system tray app that captures voice dictation into a p
 | Bug fix: tray right-click context menu | Completed | 2026-04-29 13:02 CDT |
 | Bug fix: HistoryPopup focus + empty state | Completed | 2026-04-29 13:02 CDT |
 | Bug fix: RecognitionError event for failed sessions | Completed | 2026-04-29 13:02 CDT |
-| Session 15: Speech quality + real-time typing | Completed (code) | 2026-04-29 17:29 CDT |
+| Session 15: Speech quality + real-time typing | Completed | Session 18 (committed) |
+| Session 16: Tray UX + floating context menu + toast | Completed | Session 18 (committed) |
+| Session 18: Mic picker + publish rebuild | Completed | Session 18 |
 
 ## 4. Outstanding Work
 
 | Item | Priority | Status | Notes |
 |------|----------|--------|-------|
-| Feature: Mic device picker in Settings | Medium | Not started | Let users select recording device instead of using system default; requires research into Windows.Media.SpeechRecognition device selection API |
+| Installer rebuild (Inno Setup compile) | Medium | Needs manual step | Publish done (173MB exe at bin/Release/…/publish/). Inno Setup not in PATH — run manually: see §7 |
 | Runtime test: real-time typing works phrase-by-phrase | High | Needs hardware test | TypeText() via SendInput KEYEVENTF_UNICODE; unverified at runtime |
 | Runtime test: partial text shows live in recording popup | High | Needs hardware test | INotifyPropertyChanged fix applied; unverified |
-| Runtime test: 5s silence auto-stop feels correct | Medium | Automated PASS | No-mic environment triggers InitialSilenceTimeout; popup closed in ~5s |
-| Runtime test: tray left-click shows history popup | Medium | Automated PASS | Ctrl+Alt+V hotkey (same handler); tray click not automatable on Win11 |
-| Runtime test: tray double-click toggles dictation | Medium | Automated PASS | Ctrl+Alt+D hotkey (same handler); tray click not automatable on Win11 |
 | Runtime test: tray right-click context menu | Medium | Needs hardware test | Automated test hit wrong icon; confirm visually |
-| Rebuild installer (publish + Inno Setup) | Medium | Not started | Code changed significantly since last publish |
+| Runtime test: mic device picker works with real device | Medium | Needs hardware test | IPolicyConfig COM; verify Windows comm device changes and restores |
+| Runtime test: UserCanceled saves text | Medium | Needs mic-steal test | Requires another app to grab microphone mid-session |
 
 ## 5. Risks and Known Limitations
 
 | Item | Status | Notes |
 |------|--------|-------|
-| WPF trimming disabled (187MB exe) | Accepted | Trimmed exe crashes at runtime |
+| WPF trimming disabled (173MB exe) | Accepted | Trimmed exe crashes at runtime |
 | Language/silence timeout changes require restart | By design | Settings shows restart notification |
 | Speech requires Windows Online Speech Recognition enabled | By design | Installer guides user to settings page |
 | TypeText() blocked by elevated target windows | Open | SendInput is rejected when target process runs as Admin; falls back to clipboard paste |
 | 5s silence timeout may still cut off slow speakers | Open | Configurable in Settings → Silence Timeout (range 3–60s) |
+| Mic picker: IPolicyConfig is undocumented COM API | Accepted | Stable since Vista, used by SoundSwitch/EarTrumpet. If unavailable, silently falls back to system default |
+| Mic picker: app crash during dictation leaves Windows comm device changed | Accepted | Will be wrong device until user manually resets in Windows Sound Settings |
 
 ## 6. Verification Status
 
 | Item | Result | Verified |
 |------|--------|---------|
-| Build (0 errors, 0 warnings) | Pass | 2026-04-30 CDT |
-| Unit tests (57/57) | Pass | 2026-04-30 CDT |
+| Build (0 errors, 0 warnings) | Pass | Session 18 |
+| Unit tests (63/63) | Pass | Session 18 |
 | App launch (no crash) | Automated PASS | 2026-04-30 CDT |
 | Floating button window visible | Automated PASS | 2026-04-30 CDT |
 | Click button → recording popup | Automated PASS | 2026-04-30 CDT |
@@ -100,6 +103,7 @@ VoiceClip is a Windows 11 system tray app that captures voice dictation into a p
 | Real-time phrase typing | Code correct | Pending runtime test |
 | Partial text indicator live update | Code correct | Pending runtime test |
 | HistoryPopup double-close crash | Fixed 2026-04-30 CDT | Closing event now guards Window_Deactivated |
+| Mic device picker UI | Code correct | Pending runtime test |
 
 ## 7. Restart Instructions
 
@@ -119,21 +123,21 @@ VoiceClip is a Windows 11 system tray app that captures voice dictation into a p
 6. **Left-click** the tray icon → history popup should open showing the entry
 7. **Right-click** the tray icon → context menu should appear (Dictate / History / Settings / Exit)
 8. **Double-click** the tray icon → should toggle dictation
+9. Open **Settings** → "Microphone" row should show ComboBox with "(System Default)" + detected devices
 
-### Key architecture changes in session 15
-- `PhraseCompleted` event fires for each finalized phrase (incremental text only)
-- `App.xaml.cs` handles `PhraseCompleted` → calls `WindowFocusHelper.TypeText()` immediately
-- `TypeText()` uses `SendInput` with `KEYEVENTF_UNICODE` — no clipboard, no focus switch needed
-- At session end: clipboard = full accumulated text (for re-paste reference); no Ctrl+V sent if `_phrasesTyped > 0`
-- `EndSilenceTimeout` no longer overridden — OS default ~150ms used for natural phrase detection
-- `InitialSilenceTimeout` = 5 seconds (auto-stop after silence)
+### Inno Setup installer compile (manual — ISCC not in PATH)
+```
+"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "C:\Users\juhur\OneDrive\UND\VoiceActionCopy\installer\VoiceClip.iss"
+```
+The published exe is already at:
+`src\VoiceClip\bin\Release\net8.0-windows10.0.22621.0\win-x64\publish\VoiceClip.exe` (173MB)
 
-### Self-contained publish (for installer rebuild)
+### Self-contained publish (if re-publish needed)
 ```
 "C:\Program Files\dotnet\dotnet.exe" publish src/VoiceClip/VoiceClip.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=false
 ```
 
-- Last updated: 2026-04-29 17:29 CDT
+- Last updated: Session 18
 
 ## 8. Tech Stack
 

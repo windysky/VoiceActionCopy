@@ -1,5 +1,60 @@
 # PROJECT_LOG.md — VoiceClip Session History
 
+## Session 18: 2026-04-29 — Git cleanup, publish rebuild, mic device picker (harness-hur-default)
+
+- Coding CLI used: Claude Code CLI (claude-sonnet-4-6)
+- Harness: harness-hur-default (Implementer worktree-isolated + Reviewer + QA Agent)
+
+### Phase A — Git cleanup
+
+- Committed session 15 feature work (10 modified + 3 new files) that had been left uncommitted:
+  - Commit `2633627`: real-time typing, floating button, partial results fix
+- Committed session 16 bug fixes that had been left uncommitted:
+  - Commit `498af55`: tray click rework, floating button context menu, toast auto-close
+- Working tree clean after commits
+
+### Phase C — Installer rebuild
+
+- Re-ran `dotnet publish` (self-contained, win-x64, no trimming)
+- Discovered 6 CS8602 nullable warnings in `TrayIconManager.cs` (Release build, `_clickTimer?.Stop/Start`)
+- Fixed: changed `_clickTimer.Stop()` / `_clickTimer.Start()` to null-conditional `?.` forms
+- Re-publish: 0 errors, 0 warnings
+- Published exe: **173MB** at `src/VoiceClip/bin/Release/…/win-x64/publish/VoiceClip.exe`
+- Inno Setup not in PATH — installer compile is a manual step (command in HANDOFF §7)
+
+### Phase D — Mic device picker (SPEC-VC-MIC-PICKER-001)
+
+**Research finding**: `Windows.Media.SpeechRecognition.SpeechRecognizer` has no device selection API. Workaround: `IPolicyConfig` COM interface (GUID `f8679f50-850a-41cf-9c72-430f290290c8`, stable since Vista) to temporarily set Windows default communication device before recognition starts, restore after.
+
+**Harness execution**:
+- Implementer (worktree-isolated): PASS on first attempt — 0 errors, 0 warnings, 63/63 tests
+- Reviewer: NEEDS REVISION — found HIGH issue: `StartDictationAsync` catch block missing `RestoreDefaultDevice()` call (device permanently changed on recognizer init failure)
+- Fix applied: `RestoreDefaultDevice()` added to catch block
+- QA gate (post-fix): 63/63 PASS
+
+### Concrete changes
+
+| File | Change |
+|------|--------|
+| `src/VoiceClip/Helpers/AudioDeviceHelper.cs` | NEW: WinRT device enumeration + IPolicyConfig COM P/Invoke |
+| `src/VoiceClip/Models/AppSettings.cs` | Added `MicrophoneDeviceId` (string?, null=System Default); Clone/CopyFrom updated |
+| `src/VoiceClip/Services/SpeechRecognitionService.cs` | `PreferredDeviceId` property; save/restore default comm device in all session paths |
+| `src/VoiceClip/Views/SettingsWindow.xaml` | Mic ComboBox row (row 6); Height 400→440; buttons to row 8 |
+| `src/VoiceClip/Views/SettingsWindow.xaml.cs` | Async device load on Loaded event; read/write MicrophoneDeviceId from ComboBox |
+| `src/VoiceClip/App.xaml.cs` | Set PreferredDeviceId on startup and after settings dialog |
+| `src/VoiceClip/Tray/TrayIconManager.cs` | Nullable fix: `_clickTimer?.Stop()` / `?.Start()` |
+| `tests/VoiceClip.Tests/AudioDeviceHelperTests.cs` | NEW: 2 tests |
+| `tests/VoiceClip.Tests/AppSettingsTests.cs` | 3 new tests (MicrophoneDeviceId) |
+| `tests/VoiceClip.Tests/SpeechRecognitionServiceTests.cs` | 1 new test (PreferredDeviceId) |
+
+### Verification
+
+- Build: 0 errors, 0 warnings
+- Tests: 63/63 (was 57/57; +6 new)
+- Harness: Implementer PASS, Reviewer NEEDS REVISION → fixed → Reviewer approved, QA PASS
+
+---
+
 ## Session 17 Phase B: 2026-04-30 — Automated runtime tests + HistoryPopup crash fix (harness-hur-default)
 
 - Coding CLI used: Claude Code CLI (claude-sonnet-4-6)
