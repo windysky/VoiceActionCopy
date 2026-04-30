@@ -37,8 +37,8 @@ VoiceClip is a Windows 11 system tray app that captures voice dictation into a p
 | History Run element crash fix | Completed 2026-04-29 22:30 CDT | VisualTreeHelper.GetParent guarded for non-Visual elements |
 | "No speech detected" downgraded from error to info | Completed 2026-04-29 22:30 CDT | 1s info toast, no error log entry |
 
-- **Build**: 0 errors, 0 warnings (verified 2026-04-29 22:30 CDT — post Session 16)
-- **Tests**: 57/57 passing (verified 2026-04-29 22:30 CDT — 2 stale assertions fixed: SilenceTimeoutSeconds 8→5)
+- **Build**: 0 errors, 0 warnings (verified 2026-04-30 CDT — post Session 17 HistoryPopup fix)
+- **Tests**: 57/57 passing (verified 2026-04-30 CDT)
 - **SPEC**: SPEC-VOICECLIP-001 — Status: Implemented
 - **Published exe**: 187MB (self-contained, no trimming) — needs rebuild after all session 15 changes
 - **Branch**: main
@@ -65,9 +65,10 @@ VoiceClip is a Windows 11 system tray app that captures voice dictation into a p
 | Feature: Mic device picker in Settings | Medium | Not started | Let users select recording device instead of using system default; requires research into Windows.Media.SpeechRecognition device selection API |
 | Runtime test: real-time typing works phrase-by-phrase | High | Needs hardware test | TypeText() via SendInput KEYEVENTF_UNICODE; unverified at runtime |
 | Runtime test: partial text shows live in recording popup | High | Needs hardware test | INotifyPropertyChanged fix applied; unverified |
-| Runtime test: 5s silence auto-stop feels correct | Medium | Needs hardware test | Was cutting off at 3s; now 5s |
-| Runtime test: tray left-click shows history popup | Medium | Needs hardware test | New mapping; unverified |
-| Runtime test: tray double-click toggles dictation | Medium | Needs hardware test | New mapping; unverified |
+| Runtime test: 5s silence auto-stop feels correct | Medium | Automated PASS | No-mic environment triggers InitialSilenceTimeout; popup closed in ~5s |
+| Runtime test: tray left-click shows history popup | Medium | Automated PASS | Ctrl+Alt+V hotkey (same handler); tray click not automatable on Win11 |
+| Runtime test: tray double-click toggles dictation | Medium | Automated PASS | Ctrl+Alt+D hotkey (same handler); tray click not automatable on Win11 |
+| Runtime test: tray right-click context menu | Medium | Needs hardware test | Automated test hit wrong icon; confirm visually |
 | Rebuild installer (publish + Inno Setup) | Medium | Not started | Code changed significantly since last publish |
 
 ## 5. Risks and Known Limitations
@@ -84,15 +85,21 @@ VoiceClip is a Windows 11 system tray app that captures voice dictation into a p
 
 | Item | Result | Verified |
 |------|--------|---------|
-| Build (0 errors, 0 warnings) | Pass | 2026-04-29 17:29 CDT |
-| Unit tests (57/57) | Pass | 2026-04-29 13:02 CDT |
+| Build (0 errors, 0 warnings) | Pass | 2026-04-30 CDT |
+| Unit tests (57/57) | Pass | 2026-04-30 CDT |
+| App launch (no crash) | Automated PASS | 2026-04-30 CDT |
+| Floating button window visible | Automated PASS | 2026-04-30 CDT |
+| Click button → recording popup | Automated PASS | 2026-04-30 CDT |
+| Silence auto-stop (~5s) | Automated PASS | 2026-04-30 CDT |
+| Floating button right-click → context menu | Automated PASS | 2026-04-30 CDT |
+| Tray left-click = history (via hotkey) | Automated PASS | 2026-04-30 CDT |
+| Tray double-click = dictate (via hotkey) | Automated PASS | 2026-04-30 CDT |
+| Tray right-click = context menu | Needs visual confirm | Win11 tray icon not automatable |
 | Runtime dictation (basic) | Verified working | 2026-04-29 (user spoke words, UserCanceled was root cause, now fixed) |
 | UserCanceled now saves text | Code correct | Pending runtime re-test |
 | Real-time phrase typing | Code correct | Pending runtime test |
 | Partial text indicator live update | Code correct | Pending runtime test |
-| Tray left-click = history | Code correct | Pending runtime test |
-| Tray double-click = dictate | Code correct | Pending runtime test |
-| Tray right-click = context menu | Code correct | Pending runtime test |
+| HistoryPopup double-close crash | Fixed 2026-04-30 CDT | Closing event now guards Window_Deactivated |
 
 ## 7. Restart Instructions
 

@@ -22,6 +22,9 @@ public partial class HistoryPopup : Window
 
         _viewModel.EntryCopied += OnEntryCopied;
         Closed += (s, e) => _viewModel.EntryCopied -= OnEntryCopied;
+        // Set _closing as soon as any Close() call begins (ESC, close button, deactivation,
+        // or external caller) so Window_Deactivated never calls Close() on a closing window.
+        Closing += (s, e) => _closing = true;
 
         PositionNearTray();
 
@@ -60,7 +63,10 @@ public partial class HistoryPopup : Window
         var clickedElement = e.OriginalSource as DependencyObject;
         while (clickedElement != null && clickedElement is not System.Windows.Controls.ListBoxItem)
         {
-            clickedElement = VisualTreeHelper.GetParent(clickedElement);
+            if (clickedElement is System.Windows.Media.Visual or System.Windows.Media.Media3D.Visual3D)
+                clickedElement = VisualTreeHelper.GetParent(clickedElement);
+            else
+                break;
         }
 
         if (clickedElement is System.Windows.Controls.ListBoxItem item &&
@@ -80,14 +86,20 @@ public partial class HistoryPopup : Window
                 return true;
             }
 
-            element = VisualTreeHelper.GetParent(element);
+            if (element is System.Windows.Media.Visual or System.Windows.Media.Media3D.Visual3D)
+                element = VisualTreeHelper.GetParent(element);
+            else
+                break;
         }
 
         return false;
     }
 
+    private bool _closing;
     private void Window_Deactivated(object sender, EventArgs e)
     {
+        if (_closing) return;
+        _closing = true;
         Close();
     }
 

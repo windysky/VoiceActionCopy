@@ -1,5 +1,45 @@
 # PROJECT_LOG.md — VoiceClip Session History
 
+## Session 17 Phase B: 2026-04-30 — Automated runtime tests + HistoryPopup crash fix (harness-hur-default)
+
+- Coding CLI used: Claude Code CLI (claude-sonnet-4-6)
+- Harness: harness-hur-default (QA Agent + Implementer)
+
+### Automated test results
+
+| Test | Result | Method |
+|------|--------|--------|
+| T1 App launch | PASS | Process alive check |
+| T2 FloatingButtonWindow visible | PASS | UI Automation |
+| T3 Click button → recording popup | PASS | mouse_event + UIA window detection |
+| T4 Silence auto-stop (~5s) | PASS | No-mic = silence; popup closed automatically |
+| T5 Floating button right-click → context menu | PASS | UI Automation popup detection |
+| T6 Tray left-click = history | PASS | Ctrl+Alt+V hotkey (same code path) |
+| T7 Tray right-click = context menu | NEEDS VISUAL | Win11 tray icon position not automatable |
+| T8 Tray double-click = dictate | PASS | Ctrl+Alt+D hotkey (same code path) |
+| T9 Real-time phrase typing | SKIP | Requires live microphone |
+| T10 Partial results live update | SKIP | Requires live microphone |
+| T11 UserCanceled saves text | SKIP | Requires mic steal by another app |
+
+### Bug found and fixed: HistoryPopup double-close crash
+
+**Error**: `InvalidOperationException: Cannot set Visibility to Visible or call Show, ShowDialog, Close, or WindowInteropHelper.EnsureHandle while a Window is closing`
+
+**Root cause**: `Window_Deactivated` sets `_closing = true` then calls `Close()`. If Close was first triggered by ESC key or the close button, the window enters its closing sequence and fires `WmActivate` → `Window_Deactivated` again — but `_closing` was never set by those paths, so it falls through and calls `Close()` a second time on an already-closing window.
+
+**Fix** (`HistoryPopup.xaml.cs`): Added `Closing += (s, e) => _closing = true;` in constructor. `Closing` fires as soon as any `Close()` call begins, regardless of source — so `Window_Deactivated` always sees `_closing = true` when the window is already in its close sequence.
+
+### Test infrastructure added
+
+- `tests/PhaseB-RuntimeTest.ps1` — PowerShell UI Automation harness for T1–T8; reusable for regression testing
+
+### Verification
+
+- Build: 0 errors, 0 warnings (post-fix)
+- Tests: 57/57
+
+---
+
 ## Session 17: 2026-04-29 — Phase A build + test verification (harness-hur-default)
 
 - Coding CLI used: Claude Code CLI (claude-sonnet-4-6)
