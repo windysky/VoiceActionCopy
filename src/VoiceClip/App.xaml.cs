@@ -30,6 +30,11 @@ public partial class App : Application
     private ToastNotification? _toastNotification;
     private PartialResultsIndicator? _partialResultsIndicator;
     private AppSettings? _settings;
+    private FloatingButtonWindow? _floatingButton;
+    private IntPtr _dictationTargetWindow;
+    private System.Windows.Threading.DispatcherTimer? _windowTracker;
+    private bool _isStartingDictation;
+    private int _phrasesTyped;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -111,14 +116,33 @@ public partial class App : Application
         }
 
         // Wire speech events
+        _speechService.PhraseCompleted += OnPhraseCompleted;
         _speechService.PartialResultReceived += OnPartialResult;
         _speechService.DictationCompleted += OnDictationCompleted;
+        _speechService.RecognitionError += OnRecognitionError;
 
-        // Check speech availability
-        CheckSpeechAvailabilityAsync();
+        // Create floating dictation button
+        _floatingButton = new FloatingButtonWindow();
+        _floatingButton.StartStopClicked += OnFloatingButtonClicked;
+        _floatingButton.HistoryClicked += OnHistoryClicked;
+        _floatingButton.SettingsClicked += OnSettingsClicked;
+        _floatingButton.ExitClicked += OnExitClicked;
+        _floatingButton.Show();
 
-        // Show startup notification
-        _toastNotification?.Show("Ready — Ctrl+Alt+D to dictate, Ctrl+Alt+V for history", "VoiceClip");
+        // Track the last non-VoiceClip foreground window so we know where to paste
+        _windowTracker = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(200)
+        };
+        _windowTracker.Tick += (_, _) =>
+        {
+            var hwnd = WindowFocusHelper.CaptureCurrentWindow();
+            if (hwnd != IntPtr.Zero && !WindowFocusHelper.BelongsToCurrentProcess(hwnd))
+                _dictationTargetWindow = hwnd;
+        };
+        _windowTracker.Start();
+
+        // Floating button appearance is the startup signal — no balloon needed.
     }
 
     private async void CheckSpeechAvailabilityAsync()
@@ -153,6 +177,11 @@ public partial class App : Application
         await ToggleDictationAsync();
     }
 
+    private async void OnFloatingButtonClicked(object? sender, EventArgs e)
+    {
+        await ToggleDictationAsync();
+    }
+
     private async void OnHotkeyPressed(object? sender, HotkeyEventArgs e)
     {
         switch (e.Id)
@@ -170,23 +199,50 @@ public partial class App : Application
     {
         if (_speechService == null) return;
 
+        // Guard must be at top: a second click that arrives while StartDictationAsync is
+        // awaited sees IsRecording=true and would call StopDictationAsync, killing the
+        // session before it starts. Block ALL re-entrant calls during the start sequence.
+        if (_isStartingDictation) return;
+
         if (_speechService.IsRecording)
         {
             await _speechService.StopDictationAsync();
         }
         else
         {
+            _isStartingDictation = true;
             try
             {
-                await _speechService.StartDictationAsync();
+                // Capture the user's current foreground window NOW, in addition to whatever the
+                // 200ms background tracker last saw. This handles two cases the tracker misses:
+                //   1. User just launched VoiceClip and pressed dictate before ever clicking
+                //      another window — _dictationTargetWindow would be IntPtr.Zero.
+                //   2. User changed apps within the last 200ms and the tracker hasn't ticked yet.
+                // The floating button uses WS_EX_NOACTIVATE so a click on it does NOT change
+                // the foreground, which means the foreground here is still the user's intended
+                // paste target. For hotkey trigger, the foreground is the user's current app.
+                var currentForeground = WindowFocusHelper.CaptureCurrentWindow();
+                if (currentForeground != IntPtr.Zero &&
+                    !WindowFocusHelper.BelongsToCurrentProcess(currentForeground))
+                {
+                    _dictationTargetWindow = currentForeground;
+                }
+
+                // Set UI to recording state optimistically before the await so there is no
+                // window where IsRecording=true but the button still shows idle.
+                _phrasesTyped = 0;
                 _trayIconManager?.SetState(Tray.TrayState.Recording);
+                _floatingButton?.SetRecording(true);
                 _partialResultsIndicator = new PartialResultsIndicator();
                 _partialResultsIndicator.Show();
+
+                await _speechService.StartDictationAsync();
             }
             catch (Exception ex)
             {
                 LogError("ToggleDictationAsync failed", ex);
                 _trayIconManager?.SetState(Tray.TrayState.Error, ex.Message);
+                _floatingButton?.SetRecording(false);
                 _partialResultsIndicator?.Close();
                 _partialResultsIndicator = null;
 
@@ -206,6 +262,21 @@ public partial class App : Application
                     _toastNotification?.ShowError($"Failed to start speech: {ex.Message}");
                 }
             }
+            finally
+            {
+                _isStartingDictation = false;
+            }
+        }
+    }
+
+    private void OnPhraseCompleted(object? sender, PartialResultEventArgs e)
+    {
+        // Type each phrase directly into the focused window as it is recognized —
+        // no clipboard involvement, no focus switch needed, identical to Voice Access.
+        if (!string.IsNullOrEmpty(e.Text))
+        {
+            WindowFocusHelper.TypeText(e.Text);
+            _phrasesTyped++;
         }
     }
 
@@ -222,6 +293,7 @@ public partial class App : Application
         Dispatcher.Invoke(() =>
         {
             _trayIconManager?.SetState(Tray.TrayState.Idle);
+            _floatingButton?.SetRecording(false);
             _partialResultsIndicator?.Close();
             _partialResultsIndicator = null;
 
@@ -230,12 +302,44 @@ public partial class App : Application
                 _historyService?.Add(e.Text, e.DurationSeconds);
                 try
                 {
+                    // Always put the full text on the clipboard so the user can paste it
+                    // elsewhere with Ctrl+V even after the session ends.
                     _clipboardService?.SetText(e.Text);
-                    _toastNotification?.Show("Copied to clipboard");
+
+                    if (_phrasesTyped > 0)
+                    {
+                        // Text was already typed directly into the target window phrase-by-phrase.
+                        // No need to paste again — just confirm with a toast.
+                        _toastNotification?.Show("Dictated");
+                    }
+                    else
+                    {
+                        // No phrases were typed in real-time (e.g., very quick session or
+                        // StopDictationAsync called before any ResultGenerated). Fall back to
+                        // the clipboard+paste approach.
+                        var target = _dictationTargetWindow;
+                        _ = WindowFocusHelper.PasteToWindowAsync(target)
+                            .ContinueWith(t => Dispatcher.Invoke(() =>
+                            {
+                                var pasted = t.Status == TaskStatus.RanToCompletion && t.Result;
+                                if (t.IsFaulted)
+                                {
+                                    LogError("PasteToWindowAsync", t.Exception?.GetBaseException()
+                                        ?? new Exception("Paste task faulted"));
+                                }
+                                _toastNotification?.Show(pasted
+                                    ? "Copied and pasted"
+                                    : "Copied to clipboard");
+                            }));
+                    }
                 }
                 catch (System.Runtime.InteropServices.COMException)
                 {
                     _toastNotification?.ShowError("Could not copy to clipboard — clipboard is busy");
+                }
+                catch (System.Runtime.InteropServices.ExternalException)
+                {
+                    _toastNotification?.ShowError("Could not copy to clipboard — clipboard error");
                 }
                 catch (System.Security.SecurityException)
                 {
@@ -244,8 +348,31 @@ public partial class App : Application
             }
             else if (e.DurationSeconds > 3)
             {
-                _toastNotification?.ShowError("No speech detected. Check microphone and privacy settings.");
+                _toastNotification?.Show("No speech detected");
             }
+        });
+    }
+
+    private void OnRecognitionError(object? sender, string message)
+    {
+        LogError("RecognitionError", new Exception(message));
+        Dispatcher.Invoke(() =>
+        {
+            _trayIconManager?.SetState(Tray.TrayState.Idle);
+            _floatingButton?.SetRecording(false);
+            _partialResultsIndicator?.Close();
+            _partialResultsIndicator = null;
+
+            // Map raw WinRT status strings to user-actionable guidance
+            var userMessage = message switch
+            {
+                var m when m.Contains("MicrophoneUnavailable") =>
+                    "Microphone unavailable. Check Settings → Privacy → Microphone.",
+                var m when m.Contains("AudioQualityFailure") =>
+                    "Microphone audio quality too low. Check your microphone connection.",
+                _ => message
+            };
+            _toastNotification?.ShowError(userMessage);
         });
     }
 
@@ -257,6 +384,7 @@ public partial class App : Application
             _historyViewModel.RefreshEntries();
             var popup = new HistoryPopup(_historyViewModel);
             popup.Show();
+            popup.Activate();
         });
     }
 
@@ -293,8 +421,14 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _windowTracker?.Stop();
+        _floatingButton?.Close();
         _hotkeyService?.Dispose();
         _trayIconManager?.Dispose();
+        if (_speechService != null)
+        {
+            _speechService.RecognitionError -= OnRecognitionError;
+        }
         _speechService?.Dispose();
         if (_historyViewModel != null)
         {

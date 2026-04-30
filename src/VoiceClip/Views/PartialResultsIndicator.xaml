@@ -44,11 +44,28 @@
                 <TextBlock Text="  Ctrl+Alt+D to stop" FontSize="11" Foreground="#BBBBBB" Margin="4,0,0,0"/>
             </StackPanel>
 
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
-                <TextBlock Text="{Binding PartialText}"
-                           TextWrapping="Wrap"
-                           FontSize="14" Foreground="#333333"/>
-            </ScrollViewer>
+            <Grid Grid.Row="1">
+                <TextBlock Text="Listening… speak now"
+                           FontSize="13" Foreground="#BBBBBB"
+                           VerticalAlignment="Center" HorizontalAlignment="Center"
+                           FontStyle="Italic">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding PartialText}" Value="">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+                    <TextBlock Text="{Binding PartialText}"
+                               TextWrapping="Wrap"
+                               FontSize="14" Foreground="#333333"/>
+                </ScrollViewer>
+            </Grid>
         </Grid>
     </Border>
 </Window>

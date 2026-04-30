@@ -7,7 +7,7 @@ namespace VoiceClip.Views;
 /// <summary>
 /// Floating indicator showing partial speech recognition results near the tray.
 /// </summary>
-public partial class PartialResultsIndicator : Window
+public partial class PartialResultsIndicator : Window, INotifyPropertyChanged
 {
     private string _partialText = string.Empty;
 

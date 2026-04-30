@@ -15,12 +15,18 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
     private readonly string _language;
     private readonly int _silenceTimeoutSeconds;
     private readonly StringBuilder _recognizedText = new();
+    // Guards _recognizedText against concurrent access from
+    // ContinuousRecognitionSession.ResultGenerated (background thread) and
+    // SpeechRecognizer.HypothesisGenerated (background thread, possibly different one).
+    private readonly object _textLock = new();
     private SpeechRecognizer? _recognizer;
 
     public bool IsRecording => _isRecording;
 
+    public event EventHandler<PartialResultEventArgs>? PhraseCompleted;
     public event EventHandler<PartialResultEventArgs>? PartialResultReceived;
     public event EventHandler<DictationResultEventArgs>? DictationCompleted;
+    public event EventHandler<string>? RecognitionError;
 
     public SpeechRecognitionService(string language = "en-US", int silenceTimeoutSeconds = 8)
     {
@@ -104,27 +110,62 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
 
     /// <summary>
     /// Appends recognized text (called from WinRT event handlers).
+    /// Fires PhraseCompleted with only the new incremental text (for real-time typing),
+    /// then PartialResultReceived with the full accumulated text (for the popup display).
     /// </summary>
     public void AppendRecognizedText(string text)
     {
         if (string.IsNullOrWhiteSpace(text)) return;
 
+        int prevLength;
+        lock (_textLock) { prevLength = _recognizedText.Length; }
+
         var aggregatedText = AppendRecognizedSegment(text);
+        var incremental = aggregatedText[prevLength..];
+
+        PhraseCompleted?.Invoke(this, new PartialResultEventArgs { Text = incremental });
         PartialResultReceived?.Invoke(this, new PartialResultEventArgs { Text = aggregatedText });
     }
 
     private string AppendRecognizedSegment(string text)
     {
         var trimmedText = text.Trim();
-        if (_recognizedText.Length > 0 &&
-            !char.IsWhiteSpace(_recognizedText[^1]) &&
-            !StartsWithPunctuation(trimmedText))
+        lock (_textLock)
         {
-            _recognizedText.Append(' ');
+            if (_recognizedText.Length > 0 &&
+                !char.IsWhiteSpace(_recognizedText[^1]) &&
+                !StartsWithPunctuation(trimmedText))
+            {
+                _recognizedText.Append(' ');
+            }
+
+            _recognizedText.Append(trimmedText);
+            return _recognizedText.ToString();
+        }
+    }
+
+    /// <summary>
+    /// Builds a preview string composed of the finalized recognized text plus the in-progress
+    /// hypothesis. Used to surface live word-by-word feedback while the speaker is still speaking.
+    /// Does NOT mutate <see cref="_recognizedText"/> — hypotheses are speculative and get
+    /// replaced by ResultGenerated when the phrase finalizes.
+    /// </summary>
+    private string BuildHypothesisPreview(string hypothesis)
+    {
+        var trimmed = hypothesis?.Trim() ?? string.Empty;
+        if (trimmed.Length == 0)
+        {
+            lock (_textLock) { return _recognizedText.ToString(); }
         }
 
-        _recognizedText.Append(trimmedText);
-        return _recognizedText.ToString();
+        lock (_textLock)
+        {
+            if (_recognizedText.Length == 0) return trimmed;
+            var needsSpace = !char.IsWhiteSpace(_recognizedText[^1]) && !StartsWithPunctuation(trimmed);
+            return needsSpace
+                ? _recognizedText.ToString() + ' ' + trimmed
+                : _recognizedText.ToString() + trimmed;
+        }
     }
 
     private static bool StartsWithPunctuation(string text)
@@ -146,8 +187,15 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
 
             _recognizer.ContinuousRecognitionSession.ResultGenerated += OnResultGenerated;
             _recognizer.ContinuousRecognitionSession.Completed += OnSessionCompleted;
+            // HypothesisGenerated fires word-by-word while the speaker is still mid-phrase.
+            // Without this, PartialResultReceived only fires after a phrase finalizes (i.e.
+            // after a brief silence), leaving the partial-results indicator empty during speech.
+            _recognizer.HypothesisGenerated += OnHypothesisGenerated;
 
-            _recognizer.Timeouts.EndSilenceTimeout = TimeSpan.FromSeconds(_silenceTimeoutSeconds);
+            // EndSilenceTimeout controls when each spoken phrase finalizes (ResultGenerated fires).
+            // Leave at the OS default (~150ms) so phrase detection feels natural, matching
+            // Windows Voice Access behavior. Setting it to a long value delays finalization.
+            // InitialSilenceTimeout controls how long of silence before the session auto-stops.
             _recognizer.Timeouts.InitialSilenceTimeout = TimeSpan.FromSeconds(_silenceTimeoutSeconds);
 
             _recognizer.Constraints.Add(
@@ -175,6 +223,20 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
         AppendRecognizedText(args.Result.Text);
     }
 
+    private void OnHypothesisGenerated(SpeechRecognizer sender,
+        SpeechRecognitionHypothesisGeneratedEventArgs args)
+    {
+        // Skip if a stop was requested between events to avoid surfacing stale text after the
+        // session has been torn down on the UI side.
+        if (_stopRequested || !_isRecording) return;
+
+        var hypothesisText = args.Hypothesis?.Text;
+        if (string.IsNullOrWhiteSpace(hypothesisText)) return;
+
+        var preview = BuildHypothesisPreview(hypothesisText);
+        PartialResultReceived?.Invoke(this, new PartialResultEventArgs { Text = preview });
+    }
+
     private void OnSessionCompleted(SpeechContinuousRecognitionSession sender,
         SpeechContinuousRecognitionCompletedEventArgs args)
     {
@@ -182,6 +244,20 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
         if (_stopRequested || !_isRecording) return;
 
         _isRecording = false;
+
+        // Fire DictationCompleted on normal completion: Success, TimeoutExceeded, or
+        // UserCanceled. UserCanceled fires when Windows grants mic access to another app
+        // (notification, call app, etc.) — NOT a user action. Save whatever was captured
+        // so the words aren't lost. Only surface RecognitionError for hardware failures.
+        if (args.Status != SpeechRecognitionResultStatus.Success &&
+            args.Status != SpeechRecognitionResultStatus.TimeoutExceeded &&
+            args.Status != SpeechRecognitionResultStatus.UserCanceled)
+        {
+            RecognitionError?.Invoke(this, $"Speech recognition ended: {args.Status}");
+            CleanupRecognizer();
+            return;
+        }
+
         var text = _recognizedText.ToString();
         var duration = (DateTime.UtcNow - _recordingStartTime).TotalSeconds;
 
@@ -200,6 +276,7 @@ public class SpeechRecognitionService : ISpeechRecognitionService, IDisposable
         {
             _recognizer.ContinuousRecognitionSession.ResultGenerated -= OnResultGenerated;
             _recognizer.ContinuousRecognitionSession.Completed -= OnSessionCompleted;
+            _recognizer.HypothesisGenerated -= OnHypothesisGenerated;
             _recognizer.Dispose();
             _recognizer = null;
         }

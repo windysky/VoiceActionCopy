@@ -8,7 +8,7 @@ namespace VoiceClip.Models;
 public class AppSettings : INotifyPropertyChanged
 {
     private string _language = "en-US";
-    private int _silenceTimeoutSeconds = 8;
+    private int _silenceTimeoutSeconds = 5;
     private int _maxHistoryEntries = 500;
     private bool _runOnStartup;
     private string _dictateHotkey = "Ctrl+Alt+D";
