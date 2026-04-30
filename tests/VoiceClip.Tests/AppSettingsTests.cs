@@ -14,7 +14,7 @@ public class AppSettingsTests
 
         // Assert
         settings.Language.Should().Be("en-US");
-        settings.SilenceTimeoutSeconds.Should().Be(8);
+        settings.SilenceTimeoutSeconds.Should().Be(5);
         settings.MaxHistoryEntries.Should().Be(500);
         settings.RunOnStartup.Should().BeFalse();
         settings.DictateHotkey.Should().Be("Ctrl+Alt+D");
