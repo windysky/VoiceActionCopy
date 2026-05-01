@@ -2,7 +2,9 @@
 
 Windows 11 voice dictation clipboard. Speak anywhere, type everywhere.
 
-VoiceClip captures continuous voice dictation using Windows' built-in speech recognition (the same engine as Voice Access) and types the recognized words directly into whatever window is focused — phrase by phrase, in real time. A persistent history keeps every dictation session for later reuse. Privacy-first: everything stays on your computer.
+VoiceClip captures continuous voice dictation using Windows' built-in speech recognition (the same engine as Voice Access) and **keeps the full transcript on your clipboard** — so you can paste it into any app or window whenever you're ready. While dictating, recognized phrases are also typed into the focused window in real time, phrase by phrase.
+
+**Why clipboard-based?** Windows' built-in **Voice Access** and **Win+H** dictation only type into the window that has focus *at the moment you speak*. The instant focus drifts — a notification pops, a dialog steals it, you click somewhere else — the dictated text is lost or goes to the wrong place. VoiceClip sidesteps that entirely: every session is captured to the clipboard *and* a persistent history file. Speak first, click into the right app later, paste with Ctrl+V. Works across browsers, Office apps, Slack, terminals, IDEs, password fields, anything that accepts paste.
 
 [![Latest Release](https://img.shields.io/github/v/release/windysky/VoiceClip)](https://github.com/windysky/VoiceClip/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
@@ -39,7 +41,8 @@ Choose language, silence timeout, max history size, run-on-startup, and **microp
 
 ## Features
 
-- **Real-time typing** — recognized phrases are typed into the focused window via `SendInput` (UNICODE), the same way Voice Access does it.
+- **Clipboard-first dictation** — every session ends up on the clipboard ready to paste anywhere, regardless of which window had focus while you were speaking. Solves the focus-drift problem that plagues Voice Access and Win+H.
+- **Real-time typing** — recognized phrases are also typed into the focused window via `SendInput` (UNICODE), the same way Voice Access does it.
 - **Floating always-on-top button** — start/stop dictation with one click without leaving your current app.
 - **Persistent history** — clipboard buffer of every session, saved at `%APPDATA%\VoiceClip\history.json`.
 - **Microphone picker** — choose any recording device per session; system default is restored automatically.
