@@ -4,12 +4,12 @@ Windows 11 voice dictation clipboard. Speak anywhere, type everywhere.
 
 VoiceClip captures continuous voice dictation using Windows' built-in speech recognition (the same engine as Voice Access) and types the recognized words directly into whatever window is focused — phrase by phrase, in real time. A persistent history keeps every dictation session for later reuse. Privacy-first: everything stays on your computer.
 
-[![Latest Release](https://img.shields.io/github/v/release/windysky/VoiceActionCopy)](https://github.com/windysky/VoiceActionCopy/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/windysky/VoiceClip)](https://github.com/windysky/VoiceClip/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
 
 ## Download
 
-Grab the latest installer from the **[Releases page](https://github.com/windysky/VoiceActionCopy/releases/latest)** — `VoiceClip-X.Y.Z-setup.exe`.
+Grab the latest installer from the **[Releases page](https://github.com/windysky/VoiceClip/releases/latest)** — `VoiceClip-X.Y.Z-setup.exe`.
 
 The installer is self-contained (~52 MB) — no .NET runtime install needed.
 
