@@ -37,11 +37,6 @@ Every session is saved. Open the history popup with `Ctrl+Alt+V` or by left-clic
 
 Choose language, silence timeout, max history size, run-on-startup, and **microphone device** (new in 1.0.1). The mic picker uses the Windows communication-device override so VoiceClip can record from any input without changing your system default permanently.
 
-### Tray icon
-![Tray icon](assets/screenshots/tray-icon.png)
-
-Left-click for history, right-click for context menu (Dictate / History / Settings / Exit), double-click to toggle dictation.
-
 ## Features
 
 - **Real-time typing** — recognized phrases are typed into the focused window via `SendInput` (UNICODE), the same way Voice Access does it.

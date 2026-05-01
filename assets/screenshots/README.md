@@ -8,7 +8,6 @@ The main `README.md` references the following PNG files in this folder. Drop cap
 | `recording-popup.png` | The recording popup showing live partial results ("Listening… [interim text]") | ~600px wide |
 | `history-popup.png` | History popup with several past dictation entries | ~600px wide |
 | `settings.png` | Settings window — make sure the **Microphone** dropdown row is visible | ~600px wide |
-| `tray-icon.png` | The system tray with the VoiceClip mic icon visible (right-click context menu open is a nice touch) | crop tightly |
 
 ## How to capture
 
