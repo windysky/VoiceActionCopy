@@ -1,0 +1,22 @@
+VoiceClip — Important Information
+
+Privacy
+- VoiceClip uses Windows' built-in Online Speech Recognition (the same service Voice Access uses).
+- Recognized text is stored ONLY on your computer (clipboard and local history file).
+- VoiceClip itself makes no network calls and sends nothing to the developer.
+- Voice audio handling is governed by Microsoft's Online Speech Recognition privacy policy.
+
+Use At Your Own Risk
+- VoiceClip is provided free of charge under the MIT License.
+- The software is provided "AS IS", without warranty of any kind.
+- The author is not responsible for any data loss, missed dictation, typing into
+  the wrong window, or any other consequence of using this software.
+- You are responsible for reviewing dictated text before relying on it.
+
+Requirements
+- Windows 11 (build 22621 or later).
+- Windows Online Speech Recognition must be enabled
+  (Settings -> Privacy & security -> Speech).
+- A working microphone.
+
+By continuing, you accept these terms and the MIT License shown on the next page.

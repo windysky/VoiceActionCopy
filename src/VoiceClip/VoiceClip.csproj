@@ -13,6 +13,13 @@
     <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
     <NoWarn>$(NoWarn);NETSDK1168</NoWarn>
     <_SuppressWpfTrimError>true</_SuppressWpfTrimError>
+    <Version>1.0.1</Version>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
+    <Company>Junguk Hur</Company>
+    <Product>VoiceClip</Product>
+    <Copyright>Copyright (c) 2026 Junguk Hur</Copyright>
+    <Authors>Junguk Hur</Authors>
   </PropertyGroup>
 
   <ItemGroup>

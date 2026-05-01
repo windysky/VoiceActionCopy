@@ -4,8 +4,9 @@
 
 VoiceClip is a Windows 11 system tray app that captures voice dictation into a persistent clipboard buffer using `Windows.Media.SpeechRecognition` (same engine as Voice Access). Independent of Voice Access — both can coexist.
 
-- Last updated: 2026-04-29 Session 18 CDT
-- Last coding CLI used: Claude Code CLI (claude-sonnet-4-6)
+- Last updated: 2026-04-30 Session 19 CDT
+- Last coding CLI used: Claude Code CLI (claude-opus-4-7)
+- Current version: 1.0.1
 
 ## 2. Current State
 
@@ -37,6 +38,11 @@ VoiceClip is a Windows 11 system tray app that captures voice dictation into a p
 | History Run element crash fix | Completed 2026-04-29 22:30 CDT | VisualTreeHelper.GetParent guarded for non-Visual elements |
 | "No speech detected" downgraded from error to info | Completed 2026-04-29 22:30 CDT | 1s info toast, no error log entry |
 | Mic device picker in Settings | Completed Session 18 | IPolicyConfig COM; AudioDeviceHelper; AppSettings.MicrophoneDeviceId |
+| Version bump to 1.0.1 | Completed Session 19 | csproj Version + AssemblyVersion + Authors=Junguk Hur |
+| MIT LICENSE.txt + DISCLAIMER.txt | Completed Session 19 | Root LICENSE.txt; installer/DISCLAIMER.txt with privacy + AS IS terms |
+| Installer license + disclaimer pages | Completed Session 19 | LicenseFile + InfoBeforeFile in VoiceClip.iss |
+| Installer source path bug fix | Completed Session 19 | Was packaging stale ..\publish\ (151KB framework-dependent); now points to src/VoiceClip/bin/Release/.../publish/ (173MB self-contained) |
+| Built installer VoiceClip-1.0.1-setup.exe | Completed Session 19 | 52MB at dist/ |
 
 - **Build**: 0 errors, 0 warnings (verified Session 18)
 - **Tests**: 63/63 passing (verified Session 18 — 6 new tests added for mic picker)
@@ -65,7 +71,7 @@ VoiceClip is a Windows 11 system tray app that captures voice dictation into a p
 
 | Item | Priority | Status | Notes |
 |------|----------|--------|-------|
-| Installer rebuild (Inno Setup compile) | Medium | Needs manual step | Publish done (173MB exe at bin/Release/…/publish/). Inno Setup not in PATH — run manually: see §7 |
+| Installer 1.0.1 install verification on target machine | High | Needs manual test | Uninstall old version first; install dist/VoiceClip-1.0.1-setup.exe; verify license + disclaimer pages appear; confirm floating button + mic picker present after install |
 | Runtime test: real-time typing works phrase-by-phrase | High | Needs hardware test | TypeText() via SendInput KEYEVENTF_UNICODE; unverified at runtime |
 | Runtime test: partial text shows live in recording popup | High | Needs hardware test | INotifyPropertyChanged fix applied; unverified |
 | Runtime test: tray right-click context menu | Medium | Needs hardware test | Automated test hit wrong icon; confirm visually |
@@ -125,12 +131,15 @@ VoiceClip is a Windows 11 system tray app that captures voice dictation into a p
 8. **Double-click** the tray icon → should toggle dictation
 9. Open **Settings** → "Microphone" row should show ComboBox with "(System Default)" + detected devices
 
-### Inno Setup installer compile (manual — ISCC not in PATH)
+### Inno Setup installer compile (ISCC at user-local install)
 ```
-"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "C:\Users\juhur\OneDrive\UND\VoiceActionCopy\installer\VoiceClip.iss"
+"C:\Users\juhur\AppData\Local\Programs\Inno Setup 6\ISCC.exe" "C:\Users\juhur\OneDrive\UND\VoiceActionCopy\installer\VoiceClip.iss"
 ```
-The published exe is already at:
+The published exe is at:
 `src\VoiceClip\bin\Release\net8.0-windows10.0.22621.0\win-x64\publish\VoiceClip.exe` (173MB)
+Built installer ends up at `dist\VoiceClip-{Version}-setup.exe`.
+
+WARNING: Do NOT recreate a top-level `publish/` folder at repo root. The .iss now sources directly from `src\VoiceClip\bin\Release\.../publish\`. A stale top-level `publish/` from older builds caused Sessions 15-18 features to silently NOT ship in 1.0.0 installer.
 
 ### Self-contained publish (if re-publish needed)
 ```

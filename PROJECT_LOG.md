@@ -1,5 +1,53 @@
 # PROJECT_LOG.md — VoiceClip Session History
 
+## Session 19: 2026-04-30 — v1.0.1, MIT license, disclaimer page, installer source-path bugfix
+
+- Coding CLI used: Claude Code CLI (claude-opus-4-7)
+
+### Critical bug found and fixed: installer was shipping stale binary
+
+User reported that the freshly-installed app from `dist/VoiceClip-1.0.0-setup.exe` (built earlier today) had no floating button, no live partial-results popup, and no mic picker — i.e., none of the Session 15/16/18 features. Diagnosis: `installer/VoiceClip.iss` line 40 had `Source: "..\publish\*"`, which from `installer/` resolves to a stale top-level `publish/` folder (Apr 28, 151 KB framework-dependent exe) instead of the actual self-contained build at `src/VoiceClip/bin/Release/.../publish/` (Apr 29, 180 MB). Every installer build since Session 15 was packaging the wrong exe.
+
+Fix:
+- Changed `Source:` in `VoiceClip.iss` to point directly at `..\src\VoiceClip\bin\Release\net8.0-windows10.0.22621.0\win-x64\publish\*`
+- Deleted stale top-level `publish/` folder
+- Added warning in HANDOFF §7 to never recreate that folder
+
+### Version bump to 1.0.1
+
+- `src/VoiceClip/VoiceClip.csproj`: added `<Version>1.0.1</Version>`, `<AssemblyVersion>1.0.1.0</AssemblyVersion>`, `<FileVersion>1.0.1.0</FileVersion>`, `<Company>Junguk Hur</Company>`, `<Authors>Junguk Hur</Authors>`, `<Copyright>Copyright (c) 2026 Junguk Hur</Copyright>`, `<Product>VoiceClip</Product>`
+- `installer/VoiceClip.iss`: `AppVersion` → `1.0.1`, `AppPublisher` → `Junguk Hur`, `AppCopyright` → `Copyright (c) 2026 Junguk Hur`
+
+### MIT license + disclaimer
+
+- New `LICENSE.txt` at repo root: standard MIT license text, copyright "Junguk Hur"
+- New `installer/DISCLAIMER.txt`: plain-English summary of privacy (all data stays on user computer), AS IS terms, requirements (Win 11, online speech, mic)
+- `installer/VoiceClip.iss` `[Setup]` section: added `LicenseFile=..\LICENSE.txt` and `InfoBeforeFile=DISCLAIMER.txt` — both pages now appear during install
+
+### Build artifacts
+
+- Re-published self-contained Release: 0 errors, 0 warnings
+- Compiled installer with ISCC (located at user-local `C:\Users\juhur\AppData\Local\Programs\Inno Setup 6\ISCC.exe` — not the system Program Files location originally documented)
+- Output: `dist/VoiceClip-1.0.1-setup.exe` (52 MB, lzma2/ultra64 compressing 173 MB self-contained payload)
+
+### Files changed
+
+| File | Change |
+|------|--------|
+| `src/VoiceClip/VoiceClip.csproj` | Version, assembly metadata, copyright |
+| `LICENSE.txt` | NEW: MIT license |
+| `installer/DISCLAIMER.txt` | NEW: privacy + AS IS info page |
+| `installer/VoiceClip.iss` | AppVersion 1.0.1, AppPublisher, LicenseFile, InfoBeforeFile, Source path fix |
+| `publish/` | DELETED (stale folder that caused installer bug) |
+
+### Verification
+
+- Build: 0 errors, 0 warnings
+- Installer compile: successful (42.7 sec)
+- Pending: user to uninstall old version, install 1.0.1, confirm license + disclaimer pages appear, confirm floating button + mic picker present in installed copy
+
+---
+
 ## Session 18: 2026-04-29 — Git cleanup, publish rebuild, mic device picker (harness-hur-default)
 
 - Coding CLI used: Claude Code CLI (claude-sonnet-4-6)

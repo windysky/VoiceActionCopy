@@ -3,10 +3,10 @@
 ; Requires Inno Setup 6+: https://jrsoftware.org/isdl.php
 
 #define AppName "VoiceClip"
-#define AppVersion "1.0.0"
-#define AppPublisher "VoiceClip"
+#define AppVersion "1.0.1"
+#define AppPublisher "Junguk Hur"
 #define AppExeName "VoiceClip.exe"
-#define AppCopyright "Copyright (C) 2026"
+#define AppCopyright "Copyright (c) 2026 Junguk Hur"
 
 [Setup]
 AppId={{B7E3F2A1-4D5C-6E8A-9F0B-1C2D3E4F5A6B}
@@ -28,6 +28,8 @@ SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=lowest
 MinVersion=10.0.22621
+LicenseFile=..\LICENSE.txt
+InfoBeforeFile=DISCLAIMER.txt
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -37,7 +39,7 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription
 Name: "startup"; Description: "Run on Windows &startup"; GroupDescription: "Startup:"; Flags: unchecked
 
 [Files]
-Source: "..\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+Source: "..\src\VoiceClip\bin\Release\net8.0-windows10.0.22621.0\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"
